@@ -1,0 +1,720 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project_name }} - KnowBridge AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb" style="font-size: 0.9rem;">
+            <li class="breadcrumb-item"><a href="/projects" style="color: #4F7DF3; text-decoration: none;">Projects</a></li>
+            <li class="breadcrumb-item active" style="color: #24324A;" aria-current="page" id="breadcrumbProjectName">{{ project_name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Project Header -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <h2 class="fw-bold mb-0" style="color: #24324A;" id="projectTitle">{{ project_name }}</h2>
+                        <span class="badge rounded-pill" id="projectStatusBadge" style="background-color: #d1fae5; color: #065f46;">Active</span>
+                    </div>
+                    <p class="text-muted mb-2" id="projectDescription">Loading...</p>
+                    <div class="d-flex gap-3 text-muted small">
+                        <span id="projectCreatedDate"><i class="fas fa-calendar me-1"></i>Loading...</span>
+                        <span id="projectOwner"><i class="fas fa-user me-1"></i>Loading...</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" style="border-color: #4F7DF3; color: #4F7DF3;" onclick="openEditProjectModal()">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="openDeleteProjectModal()">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                <div class="card-body p-3 d-flex align-items-center gap-3">
+                    <div class="stat-icon-lg" style="background: #F0EDFF;">
+                        <i class="fas fa-file-alt" style="color: #4F7DF3;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-4" style="color: #24324A;" id="statDocuments">0</div>
+                        <div class="text-muted small">Documents</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                <div class="card-body p-3 d-flex align-items-center gap-3">
+                    <div class="stat-icon-lg" style="background: #e0f7ee;">
+                        <i class="fas fa-gavel" style="color: #43BFA5;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-4" style="color: #24324A;" id="statDecisions">0</div>
+                        <div class="text-muted small">Decisions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                <div class="card-body p-3 d-flex align-items-center gap-3">
+                    <div class="stat-icon-lg" style="background: #fff3e0;">
+                        <i class="fas fa-tasks" style="color: #f59e0b;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-4" style="color: #24324A;" id="statTasks">0</div>
+                        <div class="text-muted small">Tasks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                <div class="card-body p-3 d-flex align-items-center gap-3">
+                    <div class="stat-icon-lg" style="background: #fde8e8;">
+                        <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-4" style="color: #24324A;" id="statRisks">0</div>
+                        <div class="text-muted small">Risks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Team + Navigation -->
+        <div class="col-lg-8">
+            <!-- Quick Navigation Cards -->
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3" style="color: #24324A;"><i class="fas fa-compass me-2" style="color: #4F7DF3;"></i>Quick Navigation</h5>
+                    <div class="row g-3">
+                        <div class="col-6 col-md-4">
+                            <a href="/projects/{{ project_id }}/documents" class="text-decoration-none">
+                                <div class="nav-card p-3 text-center rounded-3" style="background: #F0EDFF; border: 1px solid transparent; transition: all 0.2s;">
+                                    <i class="fas fa-file-alt fa-2x mb-2" style="color: #4F7DF3;"></i>
+                                    <div class="fw-medium" style="color: #24324A;">Documents</div>
+                                    <div class="text-muted small">Upload & manage</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <a href="/projects/{{ project_id }}/decisions" class="text-decoration-none">
+                                <div class="nav-card p-3 text-center rounded-3" style="background: #e0f7ee; border: 1px solid transparent; transition: all 0.2s;">
+                                    <i class="fas fa-gavel fa-2x mb-2" style="color: #43BFA5;"></i>
+                                    <div class="fw-medium" style="color: #24324A;">Decisions</div>
+                                    <div class="text-muted small">Review & verify</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <a href="/projects/{{ project_id }}/tasks" class="text-decoration-none">
+                                <div class="nav-card p-3 text-center rounded-3" style="background: #fff3e0; border: 1px solid transparent; transition: all 0.2s;">
+                                    <i class="fas fa-tasks fa-2x mb-2" style="color: #f59e0b;"></i>
+                                    <div class="fw-medium" style="color: #24324A;">Tasks</div>
+                                    <div class="text-muted small">Track & assign</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <a href="/projects/{{ project_id }}/risks" class="text-decoration-none">
+                                <div class="nav-card p-3 text-center rounded-3" style="background: #fde8e8; border: 1px solid transparent; transition: all 0.2s;">
+                                    <i class="fas fa-exclamation-triangle fa-2x mb-2" style="color: #ef4444;"></i>
+                                    <div class="fw-medium" style="color: #24324A;">Risks</div>
+                                    <div class="text-muted small">Identify & mitigate</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <a href="/projects/{{ project_id }}/review" class="text-decoration-none">
+                                <div class="nav-card p-3 text-center rounded-3" style="background: #ede9fe; border: 1px solid transparent; transition: all 0.2s;">
+                                    <i class="fas fa-clipboard-check fa-2x mb-2" style="color: #8b5cf6;"></i>
+                                    <div class="fw-medium" style="color: #24324A;">Review</div>
+                                    <div class="text-muted small">Approve & reject</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <a href="/projects/{{ project_id }}/reports" class="text-decoration-none">
+                                <div class="nav-card p-3 text-center rounded-3" style="background: #e0f2fe; border: 1px solid transparent; transition: all 0.2s;">
+                                    <i class="fas fa-chart-bar fa-2x mb-2" style="color: #0284c7;"></i>
+                                    <div class="fw-medium" style="color: #24324A;">Reports</div>
+                                    <div class="text-muted small">Generate & export</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3" style="color: #24324A;"><i class="fas fa-history me-2" style="color: #4F7DF3;"></i>Recent Activity</h5>
+                    <div id="activityList">
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-clock fa-2x mb-2" style="color: #E7ECF3;"></i>
+                            <p class="mb-0">No recent activity</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Team Members -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-semibold mb-0" style="color: #24324A;"><i class="fas fa-users me-2" style="color: #4F7DF3;"></i>Team Members</h5>
+                        <button class="btn btn-sm btn-outline-primary" style="border-color: #4F7DF3; color: #4F7DF3;" onclick="openAddMemberModal()">
+                            <i class="fas fa-plus me-1"></i>Add
+                        </button>
+                    </div>
+                    <div id="membersList">
+                        <div class="text-center py-3 text-muted small">Loading members...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom" style="border-color: #E7ECF3 !important;">
+                <h5 class="modal-title fw-semibold" id="addMemberModalLabel" style="color: #24324A;">Add Team Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addMemberForm" onsubmit="return false;">
+                    <div class="mb-3">
+                        <label for="memberSelect" class="form-label fw-medium" style="color: #24324A;">Select User</label>
+                        <select class="form-select" id="memberSelect" style="border-color: #E7ECF3; color: #24324A;">
+                            <option value="">Choose a user...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="memberRole" class="form-label fw-medium" style="color: #24324A;">Role</label>
+                        <select class="form-select" id="memberRole" style="border-color: #E7ECF3; color: #24324A;">
+                            <option value="member">Member</option>
+                            <option value="reviewer">Reviewer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="memberIsOutgoing" style="border-color: #E7ECF3;">
+                                <label class="form-check-label fw-medium" for="memberIsOutgoing" style="color: #24324A;">Outgoing</label>
+                                <div class="text-muted small">Person handing over knowledge</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="memberIsIncoming" style="border-color: #E7ECF3;">
+                                <label class="form-check-label fw-medium" for="memberIsIncoming" style="color: #24324A;">Incoming</label>
+                                <div class="text-muted small">Person receiving knowledge</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top" style="border-color: #E7ECF3 !important;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="color: #24324A; border-color: #E7ECF3;">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" style="background-color: #4F7DF3; border-color: #4F7DF3;" onclick="addMember()">
+                    <i class="fas fa-user-plus me-2"></i>Add Member
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom" style="border-color: #E7ECF3 !important;">
+                <h5 class="modal-title fw-semibold" id="editProjectModalLabel" style="color: #24324A;">Edit Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editProjectForm" onsubmit="return false;">
+                    <div class="mb-3">
+                        <label for="editProjName" class="form-label fw-medium" style="color: #24324A;">Project Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editProjName" required style="border-color: #E7ECF3; color: #24324A;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProjDesc" class="form-label fw-medium" style="color: #24324A;">Description</label>
+                        <textarea class="form-control" id="editProjDesc" rows="4" style="border-color: #E7ECF3; color: #24324A;"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProjStatus" class="form-label fw-medium" style="color: #24324A;">Status</label>
+                        <select class="form-select" id="editProjStatus" style="border-color: #E7ECF3; color: #24324A;">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top" style="border-color: #E7ECF3 !important;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="color: #24324A; border-color: #E7ECF3;">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" style="background-color: #4F7DF3; border-color: #4F7DF3;" onclick="updateProject()">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Project Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom" style="border-color: #E7ECF3 !important;">
+                <h5 class="modal-title fw-semibold" id="deleteProjectModalLabel" style="color: #24324A;">Delete Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="fw-medium" style="color: #24324A;">Are you sure you want to delete this project?</p>
+                <p class="text-danger small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top justify-content-center" style="border-color: #E7ECF3 !important;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="color: #24324A; border-color: #E7ECF3;">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" onclick="deleteProject()">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-icon-lg {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .nav-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+    .nav-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 125, 243, 0.15);
+    }
+    .member-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #E7ECF3;
+    }
+    .member-item:last-child {
+        border-bottom: none;
+    }
+    .member-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    .role-badge-outgoing { background-color: #fff7ed; color: #c2410c; }
+    .role-badge-incoming { background-color: #d1fae5; color: #065f46; }
+    .role-badge-member { background-color: #dbeafe; color: #1e40af; }
+    .role-badge-reviewer { background-color: #ede9fe; color: #6d28d9; }
+    .role-badge-admin { background-color: #fde8e8; color: #b91c1c; }
+    .activity-item {
+        display: flex;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #E7ECF3;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .activity-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-top: 6px;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const projectId = {{ project_id }};
+    let projectData = null;
+    let addMemberModalInstance = null;
+    let editProjectModalInstance = null;
+    let deleteProjectModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        addMemberModalInstance = new bootstrap.Modal(document.getElementById('addMemberModal'));
+        editProjectModalInstance = new bootstrap.Modal(document.getElementById('editProjectModal'));
+        deleteProjectModalInstance = new bootstrap.Modal(document.getElementById('deleteProjectModal'));
+        loadProjectDetails();
+        loadProjectStats();
+        loadMembers();
+        loadActivity();
+    });
+
+    async function loadProjectDetails() {
+        try {
+            const response = await fetch(`/api/projects/${projectId}`);
+            const data = await response.json();
+            if (response.ok) {
+                projectData = data.project || data;
+                document.getElementById('projectTitle').textContent = projectData.name;
+                document.getElementById('breadcrumbProjectName').textContent = projectData.name;
+                document.getElementById('projectDescription').textContent = projectData.description || 'No description provided';
+                document.getElementById('projectCreatedDate').innerHTML = `<i class="fas fa-calendar me-1"></i>${projectData.created_at ? new Date(projectData.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}`;
+                document.getElementById('projectOwner').innerHTML = `<i class="fas fa-user me-1"></i>${projectData.owner_name || 'Unknown'}`;
+                const statusBadge = document.getElementById('projectStatusBadge');
+                const status = projectData.status || 'active';
+                statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                if (status === 'active') {
+                    statusBadge.style.backgroundColor = '#d1fae5';
+                    statusBadge.style.color = '#065f46';
+                } else if (status === 'completed') {
+                    statusBadge.style.backgroundColor = '#dbeafe';
+                    statusBadge.style.color = '#1e40af';
+                } else {
+                    statusBadge.style.backgroundColor = '#f3f4f6';
+                    statusBadge.style.color = '#6b7280';
+                }
+            }
+        } catch (error) {
+            showToast('Error loading project details: ' + error.message, 'error');
+        }
+    }
+
+    async function loadProjectStats() {
+        try {
+            const response = await fetch(`/api/projects/${projectId}/stats`);
+            const data = await response.json();
+            if (response.ok) {
+                const stats = data.stats || data;
+                document.getElementById('statDocuments').textContent = stats.documents || stats.document_count || 0;
+                document.getElementById('statDecisions').textContent = stats.decisions || stats.decision_count || 0;
+                document.getElementById('statTasks').textContent = stats.tasks || stats.task_count || 0;
+                document.getElementById('statRisks').textContent = stats.risks || stats.risk_count || 0;
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
+        }
+    }
+
+    async function loadMembers() {
+        const membersList = document.getElementById('membersList');
+        try {
+            const response = await fetch(`/api/projects/${projectId}`);
+            const data = await response.json();
+            const project = data.project || data;
+            const members = project.members || [];
+
+            if (members.length === 0) {
+                membersList.innerHTML = `
+                    <div class="text-center py-3 text-muted small">
+                        <i class="fas fa-user-plus mb-2 d-block" style="font-size: 1.5rem; color: #E7ECF3;"></i>
+                        No team members yet
+                    </div>`;
+                return;
+            }
+
+            membersList.innerHTML = '';
+            members.forEach(member => {
+                const name = member.full_name || member.username || 'Unknown';
+                const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                const colors = ['#4F7DF3', '#43BFA5', '#f59e0b', '#ef4444', '#8b5cf6', '#0284c7'];
+                const color = colors[name.charCodeAt(0) % colors.length];
+
+                let badges = [];
+                const role = member.role || 'member';
+                badges.push(`<span class="badge rounded-pill role-badge-${role}" style="font-size: 0.7rem;">${role.charAt(0).toUpperCase() + role.slice(1)}</span>`);
+                if (member.is_outgoing) {
+                    badges.push('<span class="badge rounded-pill role-badge-outgoing" style="font-size: 0.7rem;">Outgoing</span>');
+                }
+                if (member.is_incoming) {
+                    badges.push('<span class="badge rounded-pill role-badge-incoming" style="font-size: 0.7rem;">Incoming</span>');
+                }
+
+                const item = document.createElement('div');
+                item.className = 'member-item';
+                item.innerHTML = `
+                    <div class="member-avatar text-white" style="background: ${color};">${initials}</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-medium small" style="color: #24324A;">${escapeHtml(name)}</div>
+                        <div class="d-flex gap-1 flex-wrap mt-1">${badges.join('')}</div>
+                    </div>
+                    <button class="btn btn-sm btn-light border-0" onclick="removeMember(${member.user_id || member.id})" title="Remove member">
+                        <i class="fas fa-times text-muted"></i>
+                    </button>
+                `;
+                membersList.appendChild(item);
+            });
+        } catch (error) {
+            membersList.innerHTML = '<div class="text-center py-3 text-danger small">Failed to load members</div>';
+        }
+    }
+
+    async function loadActivity() {
+        const activityList = document.getElementById('activityList');
+        try {
+            const response = await fetch(`/api/projects/${projectId}/activity`);
+            if (!response.ok) {
+                activityList.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-clock fa-2x mb-2" style="color: #E7ECF3;"></i>
+                        <p class="mb-0">No recent activity</p>
+                    </div>`;
+                return;
+            }
+            const data = await response.json();
+            const activities = data.activities || data || [];
+
+            if (activities.length === 0) {
+                activityList.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-clock fa-2x mb-2" style="color: #E7ECF3;"></i>
+                        <p class="mb-0">No recent activity</p>
+                    </div>`;
+                return;
+            }
+
+            activityList.innerHTML = '';
+            activities.slice(0, 10).forEach(activity => {
+                const dotColor = activity.type === 'document' ? '#4F7DF3' :
+                                activity.type === 'decision' ? '#43BFA5' :
+                                activity.type === 'task' ? '#f59e0b' :
+                                activity.type === 'risk' ? '#ef4444' : '#6c757d';
+                const timeAgo = activity.created_at ? formatTimeAgo(activity.created_at) : '';
+                const item = document.createElement('div');
+                item.className = 'activity-item';
+                item.innerHTML = `
+                    <div class="activity-dot" style="background: ${dotColor};"></div>
+                    <div class="flex-grow-1">
+                        <div class="small" style="color: #24324A;">${escapeHtml(activity.description || activity.message || '')}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">${escapeHtml(activity.user_name || '')} &middot; ${timeAgo}</div>
+                    </div>
+                `;
+                activityList.appendChild(item);
+            });
+        } catch (error) {
+            activityList.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-clock fa-2x mb-2" style="color: #E7ECF3;"></i>
+                    <p class="mb-0">No recent activity</p>
+                </div>`;
+        }
+    }
+
+    async function openAddMemberModal() {
+        try {
+            const response = await fetch('/api/auth/users');
+            if (response.ok) {
+                const data = await response.json();
+                const users = data.users || data || [];
+                const select = document.getElementById('memberSelect');
+                select.innerHTML = '<option value="">Choose a user...</option>';
+                users.forEach(u => {
+                    select.innerHTML += `<option value="${u.id}">${escapeHtml(u.full_name || u.username)}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+        }
+        document.getElementById('addMemberForm').reset();
+        addMemberModalInstance.show();
+    }
+
+    async function addMember() {
+        const userId = document.getElementById('memberSelect').value;
+        const role = document.getElementById('memberRole').value;
+        const isOutgoing = document.getElementById('memberIsOutgoing').checked;
+        const isIncoming = document.getElementById('memberIsIncoming').checked;
+
+        if (!userId) {
+            showToast('Please select a user', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/projects/${projectId}/members`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: parseInt(userId),
+                    role: role,
+                    is_outgoing: isOutgoing,
+                    is_incoming: isIncoming
+                })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                addMemberModalInstance.hide();
+                showToast('Member added successfully', 'success');
+                loadMembers();
+            } else {
+                showToast(data.error || 'Failed to add member', 'error');
+            }
+        } catch (error) {
+            showToast('Error adding member: ' + error.message, 'error');
+        }
+    }
+
+    async function removeMember(userId) {
+        if (!confirm('Remove this member from the project?')) return;
+        try {
+            const response = await fetch(`/api/projects/${projectId}/members/${userId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                showToast('Member removed', 'success');
+                loadMembers();
+            } else {
+                const data = await response.json();
+                showToast(data.error || 'Failed to remove member', 'error');
+            }
+        } catch (error) {
+            showToast('Error removing member: ' + error.message, 'error');
+        }
+    }
+
+    function openEditProjectModal() {
+        if (projectData) {
+            document.getElementById('editProjName').value = projectData.name || '';
+            document.getElementById('editProjDesc').value = projectData.description || '';
+            document.getElementById('editProjStatus').value = projectData.status || 'active';
+        }
+        editProjectModalInstance.show();
+    }
+
+    async function updateProject() {
+        const name = document.getElementById('editProjName').value.trim();
+        const description = document.getElementById('editProjDesc').value.trim();
+        const status = document.getElementById('editProjStatus').value;
+
+        if (!name) {
+            showToast('Project name is required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description, status })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                editProjectModalInstance.hide();
+                showToast('Project updated', 'success');
+                loadProjectDetails();
+            } else {
+                showToast(data.error || 'Failed to update project', 'error');
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    }
+
+    function openDeleteProjectModal() {
+        deleteProjectModalInstance.show();
+    }
+
+    async function deleteProject() {
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
+            if (response.ok) {
+                window.location.href = '/projects';
+            } else {
+                const data = await response.json();
+                showToast(data.error || 'Failed to delete project', 'error');
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    }
+
+    function formatTimeAgo(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        if (seconds < 60) return 'just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+        const toastEl = document.createElement('div');
+        const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+        const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        toastEl.className = `toast align-items-center text-white ${bgClass} border-0`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body"><i class="fas ${icon} me-2"></i>${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>`;
+        toastContainer.appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+        toast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    }
+
+    function createToastContainer() {
+        const c = document.createElement('div');
+        c.id = 'toastContainer';
+        c.className = 'toast-container position-fixed top-0 end-0 p-3';
+        c.style.zIndex = '1080';
+        document.body.appendChild(c);
+        return c;
+    }
+</script>
+{% endblock %}

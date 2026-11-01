@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Review & Verification - KnowBridge AI{% endblock %}
+{% block page_title %}Human Verification & Review Queue{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb" style="font-size: 0.9rem;">
+            <li class="breadcrumb-item"><a href="/projects" style="color: #4F7DF3; text-decoration: none;">Projects</a></li>
+            <li class="breadcrumb-item"><a href="/projects/{{ project_id }}" style="color: #4F7DF3; text-decoration: none;" id="bcProjectName">Project</a></li>
+            <li class="breadcrumb-item active" style="color: #24324A;" aria-current="page">Review Dashboard</li>
+        </ol>
+    </nav>
+
+    <!-- Header Card -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                <div>
+                    <h3 class="fw-bold mb-1" style="color: #24324A;">Human Verification Dashboard</h3>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-shield-halved text-primary me-1"></i>
+                        AI-extracted knowledge must undergo human review before entering the certified handover package.
+                    </p>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" onclick="loadPendingReviews()">
+                    <i class="fas fa-arrows-rotate me-1"></i>Refresh Queue
+                </button>
+            </div>
+
+            <!-- Pending Review Stats -->
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 border rounded-3 bg-light text-center">
+                        <div class="fs-4 fw-bold text-primary" id="pendingDecisionsCount">0</div>
+                        <div class="small text-muted">Pending Decisions</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded-3 bg-light text-center">
+                        <div class="fs-4 fw-bold text-warning" id="pendingTasksCount">0</div>
+                        <div class="small text-muted">Pending Tasks</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded-3 bg-light text-center">
+                        <div class="fs-4 fw-bold text-danger" id="pendingRisksCount">0</div>
+                        <div class="small text-muted">Pending Risks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Tabs -->
+    <ul class="nav nav-pills mb-4" id="reviewTabs" role="tablist">
+        <li class="nav-item me-2">
+            <button class="nav-link active px-4 py-2 fw-semibold" id="decisions-tab" data-bs-toggle="pill" data-bs-target="#decisionsReviewPane" type="button" role="tab">
+                <i class="fas fa-gavel me-2"></i>Decisions (<span id="decTabBadge">0</span>)
+            </button>
+        </li>
+        <li class="nav-item me-2">
+            <button class="nav-link px-4 py-2 fw-semibold" id="tasks-tab" data-bs-toggle="pill" data-bs-target="#tasksReviewPane" type="button" role="tab">
+                <i class="fas fa-list-check me-2"></i>Tasks (<span id="taskTabBadge">0</span>)
+            </button>
+        </li>
+        <li class="nav-item me-2">
+            <button class="nav-link px-4 py-2 fw-semibold" id="risks-tab" data-bs-toggle="pill" data-bs-target="#risksReviewPane" type="button" role="tab">
+                <i class="fas fa-triangle-exclamation me-2"></i>Risks (<span id="riskTabBadge">0</span>)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link px-4 py-2 fw-semibold" id="history-tab" data-bs-toggle="pill" data-bs-target="#historyReviewPane" type="button" role="tab" onclick="loadReviewHistory()">
+                <i class="fas fa-clock-rotate-left me-2"></i>Verification Audit Trail
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Contents -->
+    <div class="tab-content">
+        <!-- DECISIONS QUEUE -->
+        <div class="tab-pane fade show active" id="decisionsReviewPane" role="tabpanel">
+            <div id="decisionsQueueContainer" class="row g-3">
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TASKS QUEUE -->
+        <div class="tab-pane fade" id="tasksReviewPane" role="tabpanel">
+            <div id="tasksQueueContainer" class="row g-3">
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RISKS QUEUE -->
+        <div class="tab-pane fade" id="risksReviewPane" role="tabpanel">
+            <div id="risksQueueContainer" class="row g-3">
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUDIT TRAIL / HISTORY -->
+        <div class="tab-pane fade" id="historyReviewPane" role="tabpanel">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3" style="color: #24324A;">Review & Approval Audit Log</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead style="background: #F8FAFC; color: #6B7A99; font-size: 0.8rem; text-transform: uppercase;">
+                                <tr>
+                                    <th class="py-3">Timestamp</th>
+                                    <th class="py-3">Item Type</th>
+                                    <th class="py-3">Action</th>
+                                    <th class="py-3">Reviewer</th>
+                                    <th class="py-3">Feedback / Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No review history yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const projectId = {{ project_id }};
+let pendingData = { decisions: [], tasks: [], risks: [] };
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadProjectInfo();
+    loadPendingReviews();
+});
+
+async function loadProjectInfo() {
+    try {
+        const res = await API.get(`/api/projects/${projectId}`);
+        if (res.project) {
+            document.getElementById('bcProjectName').textContent = res.project.name;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function loadPendingReviews() {
+    try {
+        const res = await API.get(`/api/projects/${projectId}/pending-reviews`);
+        pendingData = res.pending || { decisions: [], tasks: [], risks: [] };
+
+        const dCount = pendingData.decisions.length;
+        const tCount = pendingData.tasks.length;
+        const rCount = pendingData.risks.length;
+
+        document.getElementById('pendingDecisionsCount').textContent = dCount;
+        document.getElementById('pendingTasksCount').textContent = tCount;
+        document.getElementById('pendingRisksCount').textContent = rCount;
+
+        document.getElementById('decTabBadge').textContent = dCount;
+        document.getElementById('taskTabBadge').textContent = tCount;
+        document.getElementById('riskTabBadge').textContent = rCount;
+
+        renderDecisionsQueue();
+        renderTasksQueue();
+        renderRisksQueue();
+    } catch (e) {
+        showToast('Error loading review queue: ' + e.message, 'error');
+    }
+}
+
+function renderDecisionsQueue() {
+    const container = document.getElementById('decisionsQueueContainer');
+    const items = pendingData.decisions || [];
+
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-circle-check text-success mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-semibold text-muted">No pending decisions!</h5>
+                <p class="small text-muted">All extracted decisions have been verified or resolved.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = items.map(d => `
+        <div class="col-12" id="decCard_${d.id}">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; border-left: 5px solid #4F7DF3 !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold mb-1" style="color: #24324A;">${d.title}</h5>
+                        <span class="badge bg-secondary">${d.verification_status}</span>
+                    </div>
+                    <p class="text-muted mb-3">${d.description || ''}</p>
+                    ${d.source_excerpt ? `
+                        <div class="p-3 bg-light rounded-3 small mb-3 border-start border-3 border-primary">
+                            <strong>Source Excerpt (${d.document_name || 'Document'}):</strong>
+                            <div class="fst-italic text-muted mt-1">"${d.source_excerpt}"</div>
+                        </div>
+                    ` : ''}
+                    <div class="row g-2 align-items-center pt-2 border-top">
+                        <div class="col-md-7">
+                            <input type="text" id="decComment_${d.id}" class="form-control form-control-sm" placeholder="Review comment / justification...">
+                        </div>
+                        <div class="col-md-5 text-end">
+                            <button class="btn btn-sm btn-success px-3 me-1" onclick="submitReviewAction('decision', ${d.id}, 'approved')">
+                                <i class="fas fa-check me-1"></i>Approve
+                            </button>
+                            <button class="btn btn-sm btn-warning px-3 me-1" onclick="submitReviewAction('decision', ${d.id}, 'needs_review')">
+                                <i class="fas fa-triangle-exclamation me-1"></i>Needs Review
+                            </button>
+                            <button class="btn btn-sm btn-danger px-3" onclick="submitReviewAction('decision', ${d.id}, 'rejected')">
+                                <i class="fas fa-xmark me-1"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTasksQueue() {
+    const container = document.getElementById('tasksQueueContainer');
+    const items = pendingData.tasks || [];
+
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-circle-check text-success mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-semibold text-muted">No pending tasks to verify!</h5>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = items.map(t => `
+        <div class="col-12" id="taskCard_${t.id}">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; border-left: 5px solid #F5A623 !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold mb-1" style="color: #24324A;">${t.title}</h5>
+                        <span class="badge bg-secondary">${t.verification_status}</span>
+                    </div>
+                    <p class="text-muted mb-2">${t.description || ''}</p>
+                    <div class="small text-muted mb-3">
+                        <span class="me-3"><i class="fas fa-user me-1 text-primary"></i>Assignee: ${t.assigned_to || 'Unassigned'}</span>
+                        <span class="me-3"><i class="fas fa-calendar me-1 text-danger"></i>Deadline: ${t.deadline || 'None'}</span>
+                        <span><i class="fas fa-flag me-1 text-warning"></i>Priority: ${t.priority || 'medium'}</span>
+                    </div>
+                    ${t.source_excerpt ? `
+                        <div class="p-3 bg-light rounded-3 small mb-3 border-start border-3 border-warning">
+                            <strong>Source Excerpt (${t.document_name || 'Document'}):</strong>
+                            <div class="fst-italic text-muted mt-1">"${t.source_excerpt}"</div>
+                        </div>
+                    ` : ''}
+                    <div class="row g-2 align-items-center pt-2 border-top">
+                        <div class="col-md-7">
+                            <input type="text" id="taskComment_${t.id}" class="form-control form-control-sm" placeholder="Review comment / justification...">
+                        </div>
+                        <div class="col-md-5 text-end">
+                            <button class="btn btn-sm btn-success px-3 me-1" onclick="submitReviewAction('task', ${t.id}, 'approved')">
+                                <i class="fas fa-check me-1"></i>Approve
+                            </button>
+                            <button class="btn btn-sm btn-warning px-3 me-1" onclick="submitReviewAction('task', ${t.id}, 'needs_review')">
+                                <i class="fas fa-triangle-exclamation me-1"></i>Needs Review
+                            </button>
+                            <button class="btn btn-sm btn-danger px-3" onclick="submitReviewAction('task', ${t.id}, 'rejected')">
+                                <i class="fas fa-xmark me-1"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderRisksQueue() {
+    const container = document.getElementById('risksQueueContainer');
+    const items = pendingData.risks || [];
+
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-circle-check text-success mb-3" style="font-size: 3rem;"></i>
+                <h5 class="fw-semibold text-muted">No pending risks to verify!</h5>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = items.map(r => `
+        <div class="col-12" id="riskCard_${r.id}">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; border-left: 5px solid #E74C6F !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold mb-1" style="color: #24324A;">${r.title}</h5>
+                        <div>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">${r.severity || 'Medium'}</span>
+                            <span class="badge bg-secondary">${r.verification_status}</span>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-3">${r.description || ''}</p>
+                    ${r.source_excerpt ? `
+                        <div class="p-3 bg-light rounded-3 small mb-3 border-start border-3 border-danger">
+                            <strong>Source Excerpt (${r.document_name || 'Document'}):</strong>
+                            <div class="fst-italic text-muted mt-1">"${r.source_excerpt}"</div>
+                        </div>
+                    ` : ''}
+                    <div class="row g-2 align-items-center pt-2 border-top">
+                        <div class="col-md-7">
+                            <input type="text" id="riskComment_${r.id}" class="form-control form-control-sm" placeholder="Review comment / justification...">
+                        </div>
+                        <div class="col-md-5 text-end">
+                            <button class="btn btn-sm btn-success px-3 me-1" onclick="submitReviewAction('risk', ${r.id}, 'approved')">
+                                <i class="fas fa-check me-1"></i>Verify
+                            </button>
+                            <button class="btn btn-sm btn-warning px-3 me-1" onclick="submitReviewAction('risk', ${r.id}, 'needs_review')">
+                                <i class="fas fa-triangle-exclamation me-1"></i>Investigate
+                            </button>
+                            <button class="btn btn-sm btn-danger px-3" onclick="submitReviewAction('risk', ${r.id}, 'rejected')">
+                                <i class="fas fa-xmark me-1"></i>Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function submitReviewAction(itemType, id, action) {
+    let comment = '';
+    if (itemType === 'decision') {
+        const input = document.getElementById(`decComment_${id}`);
+        if (input) comment = input.value.trim();
+    } else if (itemType === 'task') {
+        const input = document.getElementById(`taskComment_${id}`);
+        if (input) comment = input.value.trim();
+    } else if (itemType === 'risk') {
+        const input = document.getElementById(`riskComment_${id}`);
+        if (input) comment = input.value.trim();
+    }
+
+    try {
+        await API.post(`/api/${itemType}s/${id}/review`, { action, comment });
+        showToast(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} marked as ${action}`, 'success');
+        loadPendingReviews();
+    } catch (e) {
+        showToast(`Error: ${e.message}`, 'error');
+    }
+}
+
+async function loadReviewHistory() {
+    const tbody = document.getElementById('historyTableBody');
+    try {
+        const res = await API.get(`/api/projects/${projectId}/reviews`);
+        const reviews = res.reviews || [];
+
+        if (reviews.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No review records found in audit log.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = reviews.map(rv => {
+            let actionBadge = '<span class="badge bg-secondary">' + rv.action + '</span>';
+            if (rv.action === 'approved') actionBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle">Approved</span>';
+            else if (rv.action === 'rejected') actionBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Rejected</span>';
+            else if (rv.action === 'needs_review') actionBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle">Needs Review</span>';
+
+            return `
+                <tr>
+                    <td class="text-muted small">${formatDateTime(rv.created_at)}</td>
+                    <td><span class="badge bg-light text-dark text-uppercase border">${rv.item_type}</span></td>
+                    <td>${actionBadge}</td>
+                    <td class="fw-semibold small">${rv.reviewer_name || 'Reviewer'}</td>
+                    <td class="text-muted small">${rv.comment || '—'}</td>
+                </tr>
+            `;
+        }).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error loading history: ${e.message}</td></tr>`;
+    }
+}
+</script>
+{% endblock %}

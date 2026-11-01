@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — KnowBridge AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #24324A;
+            background: linear-gradient(135deg, #F0EDFF 0%, #F8FAFC 50%, #e8f7f3 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-wrapper {
+            width: 100%;
+            max-width: 960px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .auth-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(79, 125, 243, 0.1), 0 1px 3px rgba(0,0,0,0.04);
+            overflow: hidden;
+            display: flex;
+            min-height: 580px;
+        }
+
+        /* Left Branding Panel */
+        .auth-branding {
+            background: linear-gradient(160deg, #4F7DF3 0%, #3b6ae0 60%, #43BFA5 100%);
+            color: #fff;
+            padding: 3rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 42%;
+            min-width: 320px;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-branding::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        .auth-branding::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            left: -40px;
+            width: 160px;
+            height: 160px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        .auth-branding .brand-logo {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .auth-branding .brand-logo i {
+            margin-right: 0.5rem;
+        }
+        .auth-branding h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .auth-branding p {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+        .auth-branding .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0 0;
+            position: relative;
+            z-index: 1;
+        }
+        .auth-branding .feature-list li {
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .auth-branding .feature-list li i {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        /* Right Form Panel */
+        .auth-form-panel {
+            flex: 1;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #E7ECF3;
+            margin-bottom: 2rem;
+        }
+        .auth-tab {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #8a95a7;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .auth-tab:hover {
+            color: #4F7DF3;
+        }
+        .auth-tab.active {
+            color: #4F7DF3;
+            border-bottom-color: #4F7DF3;
+        }
+
+        .auth-form {
+            display: none;
+        }
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #24324A;
+            margin-bottom: 0.35rem;
+        }
+        .form-control {
+            border: 1.5px solid #E7ECF3;
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-control:focus {
+            border-color: #4F7DF3;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.1);
+        }
+        .form-select {
+            border: 1.5px solid #E7ECF3;
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-select:focus {
+            border-color: #4F7DF3;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.1);
+        }
+
+        .input-group-text {
+            background: #F8FAFC;
+            border: 1.5px solid #E7ECF3;
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            color: #8a95a7;
+        }
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .btn-auth {
+            background: #4F7DF3;
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #fff;
+            width: 100%;
+            transition: all 0.25s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-auth:hover {
+            background: #3b6ae0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(79, 125, 243, 0.3);
+            color: #fff;
+        }
+        .btn-auth:disabled {
+            opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #5a6a80;
+        }
+        .auth-switch a {
+            color: #4F7DF3;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .auth-message {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .auth-message.error {
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #DC2626;
+            display: block;
+        }
+        .auth-message.success {
+            background: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            color: #059669;
+            display: block;
+        }
+
+        .home-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            text-decoration: none;
+            color: #24324A;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            z-index: 10;
+            transition: color 0.2s;
+        }
+        .home-link:hover {
+            color: #4F7DF3;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #8a95a7;
+            cursor: pointer;
+            padding: 0;
+            z-index: 5;
+        }
+        .password-toggle:hover {
+            color: #4F7DF3;
+        }
+
+        @media (max-width: 767.98px) {
+            .auth-card {
+                flex-direction: column;
+            }
+            .auth-branding {
+                width: 100%;
+                min-width: unset;
+                padding: 2rem 1.5rem;
+                min-height: auto;
+            }
+            .auth-branding h2 {
+                font-size: 1.3rem;
+            }
+            .auth-branding .feature-list {
+                display: none;
+            }
+            .auth-form-panel {
+                padding: 2rem 1.5rem;
+            }
+            .home-link {
+                top: 1rem;
+                left: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="/" class="home-link">
+        <i class="fas fa-arrow-left"></i>
+        <span>Home</span>
+    </a>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <!-- Left Branding -->
+            <div class="auth-branding">
+                <div class="brand-logo">
+                    <i class="fas fa-bridge"></i>KnowBridge AI
+                </div>
+                <h2>Preserve Your Project Knowledge</h2>
+                <p>
+                    Ensure seamless project handovers with AI-powered knowledge extraction and human-validated insights.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-circle-check"></i> AI-powered document analysis</li>
+                    <li><i class="fas fa-circle-check"></i> Decision &amp; risk tracking</li>
+                    <li><i class="fas fa-circle-check"></i> Human-in-the-loop validation</li>
+                    <li><i class="fas fa-circle-check"></i> Comprehensive handover reports</li>
+                    <li><i class="fas fa-circle-check"></i> Team acknowledgement tracking</li>
+                </ul>
+            </div>
+
+            <!-- Right Form Panel -->
+            <div class="auth-form-panel">
+                <!-- Tabs -->
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login" type="button">Login</button>
+                    <button class="auth-tab" data-tab="register" type="button">Register</button>
+                </div>
+
+                <!-- Message Area -->
+                <div class="auth-message" id="authMessage"></div>
+
+                <!-- Login Form -->
+                <form class="auth-form active" id="loginForm" novalidate>
+                    <div class="mb-3">
+                        <label for="loginUsername" class="form-label">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="loginUsername" placeholder="Enter your username" required autocomplete="username">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="loginPassword" class="form-label">Password</label>
+                        <div class="input-group position-relative">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+                            <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-auth" id="loginBtn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loader d-none">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Signing in...
+                        </span>
+                    </button>
+                    <div class="auth-switch">
+                        Don't have an account? <a href="#" data-switch="register">Register here</a>
+                    </div>
+                </form>
+
+                <!-- Register Form -->
+                <form class="auth-form" id="registerForm" novalidate>
+                    <div class="mb-3">
+                        <label for="regFullName" class="form-label">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user-circle"></i></span>
+                            <input type="text" class="form-control" id="regFullName" placeholder="Enter your full name" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="regUsername" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-at"></i></span>
+                                <input type="text" class="form-control" id="regUsername" placeholder="Choose a username" required autocomplete="username">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="regEmail" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" class="form-control" id="regEmail" placeholder="your@email.com" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="regPassword" class="form-label">Password</label>
+                            <div class="input-group position-relative">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="regPassword" placeholder="Create password" required autocomplete="new-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword('regPassword', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="regConfirmPassword" class="form-label">Confirm Password</label>
+                            <div class="input-group position-relative">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="regConfirmPassword" placeholder="Confirm password" required autocomplete="new-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword('regConfirmPassword', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="regRole" class="form-label">Role</label>
+                        <select class="form-select" id="regRole" required>
+                            <option value="" disabled selected>Select your role</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Outgoing Team Member">Outgoing Team Member</option>
+                            <option value="Incoming Team Member">Incoming Team Member</option>
+                            <option value="Reviewer">Reviewer</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-auth" id="registerBtn">
+                        <span class="btn-text">Create Account</span>
+                        <span class="btn-loader d-none">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Creating account...
+                        </span>
+                    </button>
+                    <div class="auth-switch">
+                        Already have an account? <a href="#" data-switch="login">Login here</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ── Tab Switching ──
+        function switchTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(function(t) {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+            document.querySelectorAll('.auth-form').forEach(function(f) {
+                f.classList.toggle('active', f.id === tab + 'Form');
+            });
+            hideMessage();
+            document.title = (tab === 'login' ? 'Login' : 'Register') + ' — KnowBridge AI';
+        }
+
+        document.querySelectorAll('.auth-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                switchTab(this.dataset.tab);
+            });
+        });
+
+        document.querySelectorAll('[data-switch]').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchTab(this.dataset.switch);
+            });
+        });
+
+        // ── Message display ──
+        function showMessage(text, type) {
+            var msg = document.getElementById('authMessage');
+            msg.textContent = text;
+            msg.className = 'auth-message ' + type;
+        }
+
+        function hideMessage() {
+            var msg = document.getElementById('authMessage');
+            msg.className = 'auth-message';
+            msg.textContent = '';
+        }
+
+        // ── Password toggle ──
+        function togglePassword(inputId, btn) {
+            var input = document.getElementById(inputId);
+            var icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // ── Button loading state ──
+        function setLoading(btn, loading) {
+            var textSpan = btn.querySelector('.btn-text');
+            var loaderSpan = btn.querySelector('.btn-loader');
+            if (loading) {
+                btn.disabled = true;
+                textSpan.classList.add('d-none');
+                loaderSpan.classList.remove('d-none');
+            } else {
+                btn.disabled = false;
+                textSpan.classList.remove('d-none');
+                loaderSpan.classList.add('d-none');
+            }
+        }
+
+        // ── Login Form ──
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            hideMessage();
+
+            var username = document.getElementById('loginUsername').value.trim();
+            var password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+
+            var btn = document.getElementById('loginBtn');
+            setLoading(btn, true);
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function(result) {
+                setLoading(btn, false);
+                if (result.status === 200 && result.data.success) {
+                    showMessage('Login successful! Redirecting...', 'success');
+                    setTimeout(function() {
+                        window.location.href = result.data.redirect || '/dashboard';
+                    }, 500);
+                } else {
+                    showMessage(result.data.error || result.data.message || 'Login failed. Please check your credentials.', 'error');
+                }
+            })
+            .catch(function(err) {
+                setLoading(btn, false);
+                showMessage('Network error. Please try again.', 'error');
+            });
+        });
+
+        // ── Register Form ──
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            hideMessage();
+
+            var fullName = document.getElementById('regFullName').value.trim();
+            var username = document.getElementById('regUsername').value.trim();
+            var email = document.getElementById('regEmail').value.trim();
+            var password = document.getElementById('regPassword').value;
+            var confirmPassword = document.getElementById('regConfirmPassword').value;
+            var role = document.getElementById('regRole').value;
+
+            // Validation
+            if (!fullName || !username || !email || !password || !confirmPassword || !role) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+
+            if (username.length < 3) {
+                showMessage('Username must be at least 3 characters.', 'error');
+                return;
+            }
+
+            var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email)) {
+                showMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters.', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', 'error');
+                return;
+            }
+
+            var btn = document.getElementById('registerBtn');
+            setLoading(btn, true);
+
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    username: username,
+                    email: email,
+                    password: password,
+                    role: role
+                })
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function(result) {
+                setLoading(btn, false);
+                if ((result.status === 200 || result.status === 201) && result.data.success) {
+                    showMessage('Account created successfully! Redirecting...', 'success');
+                    setTimeout(function() {
+                        window.location.href = result.data.redirect || '/dashboard';
+                    }, 500);
+                } else {
+                    showMessage(result.data.error || result.data.message || 'Registration failed. Please try again.', 'error');
+                }
+            })
+            .catch(function(err) {
+                setLoading(btn, false);
+                showMessage('Network error. Please try again.', 'error');
+            });
+        });
+
+        // Check if URL has a hash to switch tabs
+        if (window.location.hash === '#register') {
+            switchTab('register');
+        }
+    </script>
+</body>
+</html>

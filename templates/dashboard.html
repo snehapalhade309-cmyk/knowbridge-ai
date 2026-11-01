@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block title %}Dashboard — KnowBridge AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+    <!-- Welcome Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="fw-bold mb-1" style="color: #24324A;">Welcome back, {{ session.get('full_name', 'User') }}</h4>
+            <p class="text-muted mb-0">Here's an overview of your knowledge handover progress.</p>
+        </div>
+        <div class="d-flex gap-2 mt-2 mt-md-0">
+            <a href="/projects" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                <i class="fas fa-folder-open me-1"></i>View Projects
+            </a>
+            <a href="/projects?action=new" class="btn btn-primary btn-sm" style="border-radius: 8px; background: #4F7DF3; border-color: #4F7DF3;">
+                <i class="fas fa-plus me-1"></i>New Project
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row 1 -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="kb-stat-card">
+                <div class="kb-stat-icon" style="background: #EBF0FE; color: #4F7DF3;">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="kb-stat-info">
+                    <div class="kb-stat-count" id="statTotalProjects">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                    <div class="kb-stat-label">Total Projects</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="kb-stat-card">
+                <div class="kb-stat-icon" style="background: #e8f7f3; color: #43BFA5;">
+                    <i class="fas fa-file-lines"></i>
+                </div>
+                <div class="kb-stat-info">
+                    <div class="kb-stat-count" id="statDocuments">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                    <div class="kb-stat-label">Uploaded Documents</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="kb-stat-card">
+                <div class="kb-stat-icon" style="background: #F3EBFE; color: #8B5CF6;">
+                    <i class="fas fa-gavel"></i>
+                </div>
+                <div class="kb-stat-info">
+                    <div class="kb-stat-count" id="statDecisions">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                    <div class="kb-stat-label">Extracted Decisions</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="kb-stat-card">
+                <div class="kb-stat-icon" style="background: #FEF3E2; color: #F59E0B;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="kb-stat-info">
+                    <div class="kb-stat-count" id="statPendingTasks">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                    <div class="kb-stat-label">Pending Tasks</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="kb-stat-card">
+                <div class="kb-stat-icon" style="background: #FEF2F2; color: #EF4444;">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div class="kb-stat-info">
+                    <div class="kb-stat-count" id="statRisks">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                    <div class="kb-stat-label">Identified Risks</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="kb-stat-card">
+                <div class="kb-stat-icon" style="background: #ECFDF5; color: #059669;">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <div class="kb-stat-info">
+                    <div class="kb-stat-count" id="statCompletion">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                    <div class="kb-stat-label">Handover Completion</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="kb-card">
+                <div class="kb-card-header">
+                    <h6 class="kb-card-title">
+                        <i class="fas fa-list-check me-2" style="color: #4F7DF3;"></i>Task Status Distribution
+                    </h6>
+                </div>
+                <div class="kb-card-body">
+                    <div class="chart-container" style="position:relative; height:280px;">
+                        <canvas id="taskStatusChart"></canvas>
+                    </div>
+                    <div class="text-center text-muted small mt-2" id="taskChartEmpty" style="display:none;">
+                        <i class="fas fa-chart-pie me-1"></i>No task data yet
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="kb-card">
+                <div class="kb-card-header">
+                    <h6 class="kb-card-title">
+                        <i class="fas fa-triangle-exclamation me-2" style="color: #EF4444;"></i>Risk Severity Distribution
+                    </h6>
+                </div>
+                <div class="kb-card-body">
+                    <div class="chart-container" style="position:relative; height:280px;">
+                        <canvas id="riskSeverityChart"></canvas>
+                    </div>
+                    <div class="text-center text-muted small mt-2" id="riskChartEmpty" style="display:none;">
+                        <i class="fas fa-chart-bar me-1"></i>No risk data yet
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="kb-card">
+                <div class="kb-card-header">
+                    <h6 class="kb-card-title">
+                        <i class="fas fa-gavel me-2" style="color: #8B5CF6;"></i>Decision Status
+                    </h6>
+                </div>
+                <div class="kb-card-body">
+                    <div class="chart-container" style="position:relative; height:280px;">
+                        <canvas id="decisionStatusChart"></canvas>
+                    </div>
+                    <div class="text-center text-muted small mt-2" id="decisionChartEmpty" style="display:none;">
+                        <i class="fas fa-chart-pie me-1"></i>No decision data yet
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="kb-card">
+                <div class="kb-card-header">
+                    <h6 class="kb-card-title">
+                        <i class="fas fa-chart-line me-2" style="color: #43BFA5;"></i>Activity Timeline (Last 7 Days)
+                    </h6>
+                </div>
+                <div class="kb-card-body">
+                    <div class="chart-container" style="position:relative; height:280px;">
+                        <canvas id="activityTimelineChart"></canvas>
+                    </div>
+                    <div class="text-center text-muted small mt-2" id="activityChartEmpty" style="display:none;">
+                        <i class="fas fa-chart-line me-1"></i>No activity data yet
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Recent Activity + Pending Reviews -->
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="kb-card">
+                <div class="kb-card-header">
+                    <h6 class="kb-card-title">
+                        <i class="fas fa-clock-rotate-left me-2" style="color: #4F7DF3;"></i>Recent Activity
+                    </h6>
+                </div>
+                <div class="kb-card-body p-0">
+                    <div id="recentActivityList" class="kb-activity-list">
+                        <div class="text-center py-4">
+                            <span class="spinner-border spinner-border-sm text-muted" role="status"></span>
+                            <span class="text-muted ms-2 small">Loading activity...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="kb-card">
+                <div class="kb-card-header">
+                    <h6 class="kb-card-title">
+                        <i class="fas fa-clipboard-check me-2" style="color: #F59E0B;"></i>Pending Reviews
+                    </h6>
+                </div>
+                <div class="kb-card-body p-0">
+                    <div id="pendingReviewsList" class="kb-review-list">
+                        <div class="text-center py-4">
+                            <span class="spinner-border spinner-border-sm text-muted" role="status"></span>
+                            <span class="text-muted ms-2 small">Loading reviews...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // ── Color palette ──
+    const COLORS = {
+        blue: '#4F7DF3',
+        teal: '#43BFA5',
+        purple: '#8B5CF6',
+        orange: '#F59E0B',
+        red: '#EF4444',
+        green: '#059669',
+        gray: '#94a3b8',
+        lightBlue: 'rgba(79, 125, 243, 0.15)',
+        lightTeal: 'rgba(67, 191, 165, 0.15)',
+        lightPurple: 'rgba(139, 92, 246, 0.15)',
+        lightOrange: 'rgba(245, 158, 11, 0.15)',
+        lightRed: 'rgba(239, 68, 68, 0.15)',
+        lightGreen: 'rgba(5, 150, 105, 0.15)'
+    };
+
+    // Chart.js global defaults
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#5a6a80';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.padding = 16;
+
+    // ── Chart instances ──
+    let taskChart = null;
+    let riskChart = null;
+    let decisionChart = null;
+    let activityChart = null;
+
+    // ── Fetch Dashboard Stats ──
+    function fetchStats() {
+        fetch('/api/dashboard/stats')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                document.getElementById('statTotalProjects').textContent = data.total_projects || 0;
+                document.getElementById('statDocuments').textContent = data.total_documents || 0;
+                document.getElementById('statDecisions').textContent = data.total_decisions || 0;
+                document.getElementById('statPendingTasks').textContent = data.pending_tasks || 0;
+                document.getElementById('statRisks').textContent = data.total_risks || 0;
+
+                var completion = data.handover_completion || 0;
+                document.getElementById('statCompletion').textContent = completion + '%';
+            })
+            .catch(function() {
+                document.getElementById('statTotalProjects').textContent = '0';
+                document.getElementById('statDocuments').textContent = '0';
+                document.getElementById('statDecisions').textContent = '0';
+                document.getElementById('statPendingTasks').textContent = '0';
+                document.getElementById('statRisks').textContent = '0';
+                document.getElementById('statCompletion').textContent = '0%';
+            });
+    }
+
+    // ── Fetch Charts Data ──
+    function fetchCharts() {
+        fetch('/api/dashboard/charts')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                renderTaskChart(data.task_status || {});
+                renderRiskChart(data.risk_severity || {});
+                renderDecisionChart(data.decision_status || {});
+                renderActivityChart(data.activity_timeline || {});
+            })
+            .catch(function() {
+                renderTaskChart({});
+                renderRiskChart({});
+                renderDecisionChart({});
+                renderActivityChart({});
+            });
+    }
+
+    // ── Task Status Doughnut ──
+    function renderTaskChart(statusData) {
+        var ctx = document.getElementById('taskStatusChart').getContext('2d');
+        var labels = ['Not Started', 'In Progress', 'Completed', 'Blocked'];
+        var keys = ['not_started', 'in_progress', 'completed', 'blocked'];
+        var values = keys.map(function(k) { return statusData[k] || 0; });
+        var total = values.reduce(function(a, b) { return a + b; }, 0);
+
+        if (total === 0) {
+            document.getElementById('taskChartEmpty').style.display = 'block';
+            document.getElementById('taskStatusChart').style.display = 'none';
+            return;
+        }
+
+        var colors = [COLORS.gray, COLORS.blue, COLORS.green, COLORS.red];
+        var bgColors = ['rgba(148,163,184,0.15)', COLORS.lightBlue, COLORS.lightGreen, COLORS.lightRed];
+
+        if (taskChart) taskChart.destroy();
+        taskChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 16, font: { size: 12 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Risk Severity Bar Chart ──
+    function renderRiskChart(severityData) {
+        var ctx = document.getElementById('riskSeverityChart').getContext('2d');
+        var labels = ['Critical', 'High', 'Medium', 'Low'];
+        var keys = ['critical', 'high', 'medium', 'low'];
+        var values = keys.map(function(k) { return severityData[k] || 0; });
+        var total = values.reduce(function(a, b) { return a + b; }, 0);
+
+        if (total === 0) {
+            document.getElementById('riskChartEmpty').style.display = 'block';
+            document.getElementById('riskSeverityChart').style.display = 'none';
+            return;
+        }
+
+        var colors = [COLORS.red, COLORS.orange, COLORS.blue, COLORS.teal];
+
+        if (riskChart) riskChart.destroy();
+        riskChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Risks',
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, font: { size: 12 } },
+                        grid: { color: 'rgba(0,0,0,0.04)' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 12 } }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // ── Decision Status Doughnut ──
+    function renderDecisionChart(statusData) {
+        var ctx = document.getElementById('decisionStatusChart').getContext('2d');
+        var labels = ['Unverified', 'Approved', 'Rejected', 'Needs Review'];
+        var keys = ['unverified', 'approved', 'rejected', 'needs_review'];
+        var values = keys.map(function(k) { return statusData[k] || 0; });
+        var total = values.reduce(function(a, b) { return a + b; }, 0);
+
+        if (total === 0) {
+            document.getElementById('decisionChartEmpty').style.display = 'block';
+            document.getElementById('decisionStatusChart').style.display = 'none';
+            return;
+        }
+
+        var colors = [COLORS.gray, COLORS.green, COLORS.red, COLORS.orange];
+
+        if (decisionChart) decisionChart.destroy();
+        decisionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 16, font: { size: 12 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Activity Timeline Line Chart ──
+    function renderActivityChart(timelineData) {
+        var ctx = document.getElementById('activityTimelineChart').getContext('2d');
+        var labels = timelineData.labels || [];
+        var values = timelineData.values || [];
+        var total = values.reduce(function(a, b) { return a + b; }, 0);
+
+        if (labels.length === 0 || total === 0) {
+            // Generate empty 7-day labels
+            if (labels.length === 0) {
+                labels = [];
+                values = [];
+                for (var i = 6; i >= 0; i--) {
+                    var d = new Date();
+                    d.setDate(d.getDate() - i);
+                    labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    values.push(0);
+                }
+            }
+        }
+
+        if (activityChart) activityChart.destroy();
+        activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Activities',
+                    data: values,
+                    borderColor: COLORS.blue,
+                    backgroundColor: 'rgba(79, 125, 243, 0.08)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: COLORS.blue,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, font: { size: 12 } },
+                        grid: { color: 'rgba(0,0,0,0.04)' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // ── Fetch Recent Activity ──
+    function fetchActivity() {
+        fetch('/api/dashboard/activity')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var list = document.getElementById('recentActivityList');
+                var activities = data.activities || data || [];
+
+                if (!Array.isArray(activities)) activities = [];
+
+                if (activities.length === 0) {
+                    list.innerHTML = '<div class="text-center py-4 text-muted">' +
+                        '<i class="fas fa-inbox fa-2x mb-2 d-block" style="opacity:0.3;"></i>' +
+                        '<span class="small">No recent activity</span></div>';
+                    return;
+                }
+
+                var html = '';
+                activities.slice(0, 10).forEach(function(item) {
+                    var initials = (item.user_name || item.username || 'U').split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().substring(0, 2);
+                    var timeAgo = item.time_ago || formatTimeAgo(item.created_at || item.timestamp);
+                    var action = item.action || item.description || 'Performed an action';
+                    var icon = getActivityIcon(action);
+
+                    html += '<div class="kb-activity-item">' +
+                        '<div class="kb-activity-avatar">' + initials + '</div>' +
+                        '<div class="kb-activity-content">' +
+                            '<div class="kb-activity-text">' +
+                                '<span class="fw-semibold">' + escapeHtml(item.user_name || item.username || 'User') + '</span> ' +
+                                escapeHtml(action) +
+                            '</div>' +
+                            '<div class="kb-activity-time">' +
+                                '<i class="fas fa-clock me-1"></i>' + escapeHtml(timeAgo) +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="kb-activity-icon">' +
+                            '<i class="fas ' + icon + '"></i>' +
+                        '</div>' +
+                    '</div>';
+                });
+                list.innerHTML = html;
+            })
+            .catch(function() {
+                document.getElementById('recentActivityList').innerHTML =
+                    '<div class="text-center py-4 text-muted">' +
+                    '<i class="fas fa-inbox fa-2x mb-2 d-block" style="opacity:0.3;"></i>' +
+                    '<span class="small">No recent activity</span></div>';
+            });
+    }
+
+    // ── Fetch Pending Reviews ──
+    function fetchPendingReviews() {
+        fetch('/api/dashboard/pending-reviews')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var list = document.getElementById('pendingReviewsList');
+                var reviews = data.reviews || data || [];
+
+                if (!Array.isArray(reviews)) reviews = [];
+
+                if (reviews.length === 0) {
+                    list.innerHTML = '<div class="text-center py-4 text-muted">' +
+                        '<i class="fas fa-clipboard-check fa-2x mb-2 d-block" style="opacity:0.3;"></i>' +
+                        '<span class="small">No pending reviews</span></div>';
+                    return;
+                }
+
+                var html = '';
+                reviews.slice(0, 8).forEach(function(item) {
+                    var badgeColor = item.type === 'decision' ? '#8B5CF6' :
+                                     item.type === 'task' ? '#4F7DF3' :
+                                     item.type === 'risk' ? '#EF4444' : '#F59E0B';
+                    var typeLabel = (item.type || 'item').charAt(0).toUpperCase() + (item.type || 'item').slice(1);
+                    var reviewUrl = item.review_url || '#';
+
+                    html += '<div class="kb-review-item">' +
+                        '<div class="d-flex align-items-start gap-3">' +
+                            '<span class="badge" style="background:' + badgeColor + '; font-size:0.7rem; border-radius:6px; padding:0.3rem 0.6rem;">' + escapeHtml(typeLabel) + '</span>' +
+                            '<div class="flex-grow-1 min-width-0">' +
+                                '<div class="fw-semibold small text-truncate">' + escapeHtml(item.title || item.name || 'Untitled') + '</div>' +
+                                '<div class="text-muted" style="font-size:0.75rem;">' + escapeHtml(item.project_name || '') + '</div>' +
+                            '</div>' +
+                            '<a href="' + escapeHtml(reviewUrl) + '" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem; white-space:nowrap;">Review</a>' +
+                        '</div>' +
+                    '</div>';
+                });
+                list.innerHTML = html;
+            })
+            .catch(function() {
+                document.getElementById('pendingReviewsList').innerHTML =
+                    '<div class="text-center py-4 text-muted">' +
+                    '<i class="fas fa-clipboard-check fa-2x mb-2 d-block" style="opacity:0.3;"></i>' +
+                    '<span class="small">No pending reviews</span></div>';
+            });
+    }
+
+    // ── Helpers ──
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getActivityIcon(action) {
+        action = (action || '').toLowerCase();
+        if (action.indexOf('upload') !== -1 || action.indexOf('document') !== -1) return 'fa-file-arrow-up';
+        if (action.indexOf('decision') !== -1) return 'fa-gavel';
+        if (action.indexOf('task') !== -1) return 'fa-list-check';
+        if (action.indexOf('risk') !== -1) return 'fa-triangle-exclamation';
+        if (action.indexOf('review') !== -1 || action.indexOf('approv') !== -1) return 'fa-clipboard-check';
+        if (action.indexOf('project') !== -1 || action.indexOf('creat') !== -1) return 'fa-folder-plus';
+        if (action.indexOf('report') !== -1) return 'fa-file-export';
+        if (action.indexOf('login') !== -1) return 'fa-sign-in-alt';
+        return 'fa-circle-dot';
+    }
+
+    function formatTimeAgo(dateStr) {
+        if (!dateStr) return 'Just now';
+        try {
+            var date = new Date(dateStr);
+            var now = new Date();
+            var diffMs = now - date;
+            var diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return diffMins + 'm ago';
+            var diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return diffHours + 'h ago';
+            var diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 7) return diffDays + 'd ago';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } catch (e) {
+            return 'Recently';
+        }
+    }
+
+    // ── Initialize ──
+    fetchStats();
+    fetchCharts();
+    fetchActivity();
+    fetchPendingReviews();
+});
+</script>
+{% endblock %}

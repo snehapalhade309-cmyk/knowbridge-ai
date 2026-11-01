@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Handover Reports - KnowBridge AI{% endblock %}
+{% block page_title %}Handover Reports & Acknowledgements{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb" style="font-size: 0.9rem;">
+            <li class="breadcrumb-item"><a href="/projects" style="color: #4F7DF3; text-decoration: none;">Projects</a></li>
+            <li class="breadcrumb-item"><a href="/projects/{{ project_id }}" style="color: #4F7DF3; text-decoration: none;" id="bcProjectName">Project</a></li>
+            <li class="breadcrumb-item active" style="color: #24324A;" aria-current="page">Reports</li>
+        </ol>
+    </nav>
+
+    <!-- Header Card -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h3 class="fw-bold mb-1" style="color: #24324A;">Project Handover Reports</h3>
+                <p class="text-muted mb-0">Compile verified decisions, pending tasks, identified risks, and evidence into official handover deliverables.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="generateReport(this)" style="background: #4F7DF3; border: none; border-radius: 8px; padding: 10px 20px;">
+                    <i class="fas fa-file-circle-plus me-2"></i>Generate Handover Report
+                </button>
+                <button class="btn btn-outline-secondary" onclick="loadReports()">
+                    <i class="fas fa-arrows-rotate"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports List Container -->
+    <div id="reportsContainer" class="row g-4">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="text-muted mt-2">Loading generated reports...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Report Modal -->
+<div class="modal fade" id="shareReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" style="color: #24324A;">
+                    <i class="fas fa-share-nodes text-primary me-2"></i>Share Handover Report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="shareReportId">
+                <p class="text-muted small mb-3">Distribute this certified handover report to incoming members for formal acknowledgement.</p>
+                <div class="alert alert-info py-2 small">
+                    <i class="fas fa-info-circle me-1"></i> Sharing will create pending acknowledgement tracking for all assigned project team members.
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeShareReport()">Share with Team</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acknowledgements Modal -->
+<div class="modal fade" id="acksModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" style="color: #24324A;">
+                    <i class="fas fa-signature text-success me-2"></i>Handover Acknowledgement Tracking
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: #F8FAFC; color: #6B7A99; font-size: 0.8rem; text-transform: uppercase;">
+                            <tr>
+                                <th class="py-3">Team Member</th>
+                                <th class="py-3">Email</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3">Acknowledged At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="acksTableBody">
+                            <tr><td colspan="4" class="text-center py-4 text-muted">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const projectId = {{ project_id }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadProjectInfo();
+    loadReports();
+});
+
+async function loadProjectInfo() {
+    try {
+        const res = await API.get(`/api/projects/${projectId}`);
+        if (res.project) {
+            document.getElementById('bcProjectName').textContent = res.project.name;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function loadReports() {
+    const container = document.getElementById('reportsContainer');
+    try {
+        const res = await API.get(`/api/projects/${projectId}/reports`);
+        const reports = res.reports || [];
+
+        if (reports.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-file-invoice text-muted mb-3" style="font-size: 3.5rem;"></i>
+                    <h5 class="fw-semibold text-muted">No handover reports generated yet</h5>
+                    <p class="small text-muted mb-4">Click "Generate Handover Report" above to compile project knowledge into formal PDF and CSV archives.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = reports.map(r => {
+            const dateStr = formatDateTime(r.generated_at);
+            const comp = r.completion_percentage !== undefined ? r.completion_percentage : 100;
+
+            return `
+                <div class="col-md-6 col-lg-6">
+                    <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="stat-icon-lg" style="background: #E8EEFF; color: #4F7DF3;">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </div>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        ${comp}% Handover Completion
+                                    </span>
+                                </div>
+                                <h5 class="fw-bold mb-1" style="color: #24324A;">${r.title || 'Handover Report'}</h5>
+                                <div class="small text-muted mb-3">
+                                    <div><i class="fas fa-calendar me-1"></i>${dateStr}</div>
+                                    <div><i class="fas fa-user-check me-1"></i>Generated by ${r.generator_name || 'Admin'}</div>
+                                </div>
+                                <p class="text-muted small" style="line-height: 1.5;">
+                                    Complete audit of project decisions, open action items, risk mitigation, and team responsibilities.
+                                </p>
+                            </div>
+
+                            <div class="pt-3 border-top d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/api/reports/${r.id}/download" class="btn btn-outline-primary">
+                                        <i class="fas fa-file-pdf me-1"></i>PDF
+                                    </a>
+                                    <a href="/api/reports/${r.id}/download/csv" class="btn btn-outline-secondary">
+                                        <i class="fas fa-file-csv me-1"></i>CSV
+                                    </a>
+                                </div>
+
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-success" onclick="acknowledgeReport(${r.id})">
+                                        <i class="fas fa-signature me-1"></i>Acknowledge
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="openShareModal(${r.id})">
+                                        <i class="fas fa-share-nodes"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="viewAcknowledgements(${r.id})">
+                                        <i class="fas fa-users-viewfinder"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = `<div class="col-12 text-center text-danger py-5">Error: ${e.message}</div>`;
+    }
+}
+
+async function generateReport(btn) {
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Compiling Handover...`;
+
+    try {
+        await API.post(`/api/projects/${projectId}/reports/generate`, {});
+        showToast('Handover report generated successfully!', 'success');
+        loadReports();
+    } catch (e) {
+        showToast('Failed to generate report: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+function openShareModal(reportId) {
+    document.getElementById('shareReportId').value = reportId;
+    new bootstrap.Modal(document.getElementById('shareReportModal')).show();
+}
+
+async function executeShareReport() {
+    const reportId = document.getElementById('shareReportId').value;
+    try {
+        await API.post(`/api/reports/${reportId}/share`, {});
+        showToast('Report shared with team members', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('shareReportModal')).hide();
+    } catch (e) {
+        showToast('Share failed: ' + e.message, 'error');
+    }
+}
+
+async function acknowledgeReport(reportId) {
+    if (!confirm('Do you confirm formal receipt and acknowledgement of this handover package?')) return;
+    try {
+        await API.post(`/api/reports/${reportId}/acknowledge`, {});
+        showToast('Handover acknowledged. Your acknowledgement has been recorded in the audit trail.', 'success');
+    } catch (e) {
+        showToast('Acknowledgement error: ' + e.message, 'error');
+    }
+}
+
+async function viewAcknowledgements(reportId) {
+    const tbody = document.getElementById('acksTableBody');
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>`;
+    new bootstrap.Modal(document.getElementById('acksModal')).show();
+
+    try {
+        const res = await API.get(`/api/reports/${reportId}/acknowledgements`);
+        const acks = res.acknowledgements || [];
+
+        if (acks.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No acknowledgements recorded yet for this report.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = acks.map(a => {
+            const isAck = a.status === 'acknowledged';
+            const badge = isAck ? 
+                '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fas fa-check me-1"></i>Acknowledged</span>' :
+                '<span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending</span>';
+
+            return `
+                <tr>
+                    <td class="fw-semibold text-dark">${a.user_name || 'Member'}</td>
+                    <td class="text-muted small">${a.user_email || '—'}</td>
+                    <td>${badge}</td>
+                    <td class="text-muted small">${a.acknowledged_at ? formatDateTime(a.acknowledged_at) : '—'}</td>
+                </tr>
+            `;
+        }).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error loading data: ${e.message}</td></tr>`;
+    }
+}
+</script>
+{% endblock %}

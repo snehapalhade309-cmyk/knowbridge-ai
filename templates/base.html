@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KnowBridge AI{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body class="kb-app">
+
+    {% if show_sidebar is not defined or show_sidebar %}
+    <!-- Mobile Top Navbar -->
+    <nav class="kb-topbar d-md-none">
+        <div class="d-flex align-items-center justify-content-between w-100 px-3 py-2">
+            <button class="btn btn-link text-decoration-none p-0 kb-hamburger" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+                <i class="fas fa-bars fa-lg" style="color: #24324A;"></i>
+            </button>
+            <a class="text-decoration-none d-flex align-items-center" href="/dashboard">
+                <i class="fas fa-bridge" style="color: #4F7DF3; font-size: 1.25rem;"></i>
+                <span class="fw-bold ms-2" style="color: #24324A; font-size: 1.1rem;">KnowBridge AI</span>
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-link text-decoration-none p-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="kb-avatar-sm">
+                        {{ session.get('full_name', 'U')[0] | upper }}
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><span class="dropdown-item-text fw-semibold">{{ session.get('full_name', 'User') }}</span></li>
+                    <li><span class="dropdown-item-text text-muted small">{{ session.get('role', '') }}</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Offcanvas Sidebar for Mobile -->
+    <div class="offcanvas offcanvas-start kb-offcanvas" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+        <div class="offcanvas-header border-bottom" style="border-color: #E7ECF3 !important;">
+            <a class="text-decoration-none d-flex align-items-center" href="/dashboard" id="sidebarOffcanvasLabel">
+                <i class="fas fa-bridge" style="color: #4F7DF3; font-size: 1.4rem;"></i>
+                <span class="fw-bold ms-2" style="color: #24324A; font-size: 1.15rem;">KnowBridge AI</span>
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0 d-flex flex-column">
+            <nav class="kb-sidebar-nav flex-grow-1">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard">
+                            <i class="fas fa-gauge-high"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'projects' %}active{% endif %}" href="/projects">
+                            <i class="fas fa-folder-open"></i>
+                            <span>Projects</span>
+                        </a>
+                    </li>
+                </ul>
+
+                {% if project_id is defined and project_id %}
+                <div class="kb-sidebar-divider"></div>
+                <div class="kb-project-context">
+                    <a href="/projects" class="kb-back-link">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Projects</span>
+                    </a>
+                    <div class="kb-project-name" title="{{ project_name | default('Project') }}">
+                        <i class="fas fa-folder me-1"></i>
+                        {{ project_name | default('Project') }}
+                    </div>
+                </div>
+                <ul class="nav flex-column kb-project-nav">
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'documents' %}active{% endif %}" href="/projects/{{ project_id }}/documents">
+                            <i class="fas fa-file-lines"></i>
+                            <span>Documents</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'decisions' %}active{% endif %}" href="/projects/{{ project_id }}/decisions">
+                            <i class="fas fa-gavel"></i>
+                            <span>Decisions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'tasks' %}active{% endif %}" href="/projects/{{ project_id }}/tasks">
+                            <i class="fas fa-list-check"></i>
+                            <span>Tasks</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'risks' %}active{% endif %}" href="/projects/{{ project_id }}/risks">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            <span>Risks</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'review' %}active{% endif %}" href="/projects/{{ project_id }}/review">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>Review</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link kb-nav-link {% if active_page == 'reports' %}active{% endif %}" href="/projects/{{ project_id }}/reports">
+                            <i class="fas fa-file-export"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                </ul>
+                {% endif %}
+            </nav>
+            <div class="kb-sidebar-footer">
+                <div class="kb-ai-status">
+                    <span class="kb-ai-dot" id="mobileAiDot"></span>
+                    <span class="kb-ai-text" id="mobileAiText">AI: Checking...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Sidebar -->
+    <aside class="kb-sidebar d-none d-md-flex flex-column">
+        <div class="kb-sidebar-header">
+            <a class="text-decoration-none d-flex align-items-center" href="/dashboard">
+                <div class="kb-logo-icon">
+                    <i class="fas fa-bridge"></i>
+                </div>
+                <span class="kb-logo-text">KnowBridge AI</span>
+            </a>
+        </div>
+
+        <nav class="kb-sidebar-nav flex-grow-1">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard">
+                        <i class="fas fa-gauge-high"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'projects' %}active{% endif %}" href="/projects">
+                        <i class="fas fa-folder-open"></i>
+                        <span>Projects</span>
+                    </a>
+                </li>
+            </ul>
+
+            {% if project_id is defined and project_id %}
+            <div class="kb-sidebar-divider"></div>
+            <div class="kb-project-context">
+                <a href="/projects" class="kb-back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Projects</span>
+                </a>
+                <div class="kb-project-name" title="{{ project_name | default('Project') }}">
+                    <i class="fas fa-folder me-1"></i>
+                    {{ project_name | default('Project') }}
+                </div>
+            </div>
+            <ul class="nav flex-column kb-project-nav">
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'documents' %}active{% endif %}" href="/projects/{{ project_id }}/documents">
+                        <i class="fas fa-file-lines"></i>
+                        <span>Documents</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'decisions' %}active{% endif %}" href="/projects/{{ project_id }}/decisions">
+                        <i class="fas fa-gavel"></i>
+                        <span>Decisions</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'tasks' %}active{% endif %}" href="/projects/{{ project_id }}/tasks">
+                        <i class="fas fa-list-check"></i>
+                        <span>Tasks</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'risks' %}active{% endif %}" href="/projects/{{ project_id }}/risks">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <span>Risks</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'review' %}active{% endif %}" href="/projects/{{ project_id }}/review">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Review</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link kb-nav-link {% if active_page == 'reports' %}active{% endif %}" href="/projects/{{ project_id }}/reports">
+                        <i class="fas fa-file-export"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+        </nav>
+
+        <div class="kb-sidebar-footer">
+            <div class="kb-ai-status">
+                <span class="kb-ai-dot" id="desktopAiDot"></span>
+                <span class="kb-ai-text" id="desktopAiText">AI: Checking...</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Desktop Top Navbar -->
+    <header class="kb-header d-none d-md-block">
+        <div class="d-flex align-items-center justify-content-between h-100 px-4">
+            <div class="d-flex align-items-center">
+                <h5 class="mb-0 fw-semibold" style="color: #24324A;">{% block page_title %}{% endblock %}</h5>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="dropdown">
+                    <button class="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="kb-avatar-sm">
+                            {{ session.get('full_name', 'U')[0] | upper }}
+                        </div>
+                        <div class="text-start d-none d-lg-block">
+                            <div class="fw-semibold small" style="color: #24324A;">{{ session.get('full_name', 'User') }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ session.get('role', '') }}</div>
+                        </div>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li>
+                            <span class="dropdown-item-text">
+                                <div class="fw-semibold">{{ session.get('full_name', 'User') }}</div>
+                                <div class="text-muted small">{{ session.get('username', '') }}</div>
+                            </span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="{% if show_sidebar is not defined or show_sidebar %}kb-main{% else %}kb-main-full{% endif %}">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="kb-flash-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="fas {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' if category == 'error' or category == 'danger' else 'fa-circle-info' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/static/js/app.js"></script>
+
+    {% if show_sidebar is not defined or show_sidebar %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check AI status
+            function checkAIStatus() {
+                fetch('/api/ai/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        const isOnline = data.status === 'online' || data.available === true;
+                        const statusText = isOnline ? 'AI: Online' : 'AI: Fallback';
+                        const dotClass = isOnline ? 'kb-ai-dot--online' : 'kb-ai-dot--fallback';
+
+                        const dots = document.querySelectorAll('.kb-ai-dot');
+                        const texts = document.querySelectorAll('.kb-ai-text');
+
+                        dots.forEach(dot => {
+                            dot.className = 'kb-ai-dot ' + dotClass;
+                        });
+                        texts.forEach(text => {
+                            text.textContent = statusText;
+                        });
+                    })
+                    .catch(() => {
+                        const dots = document.querySelectorAll('.kb-ai-dot');
+                        const texts = document.querySelectorAll('.kb-ai-text');
+
+                        dots.forEach(dot => {
+                            dot.className = 'kb-ai-dot kb-ai-dot--offline';
+                        });
+                        texts.forEach(text => {
+                            text.textContent = 'AI: Offline';
+                        });
+                    });
+            }
+
+            checkAIStatus();
+            setInterval(checkAIStatus, 30000);
+        });
+    </script>
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

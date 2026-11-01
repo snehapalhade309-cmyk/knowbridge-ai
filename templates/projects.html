@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - KnowBridge AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1" style="color: #24324A;">Projects</h1>
+            <p class="text-muted mb-0">Manage your knowledge handover projects</p>
+        </div>
+        <button class="btn btn-primary px-4" style="background-color: #4F7DF3; border-color: #4F7DF3;" onclick="openCreateModal()">
+            <i class="fas fa-plus me-2"></i>New Project
+        </button>
+    </div>
+
+    <!-- Projects Grid -->
+    <div id="projectsGrid" class="row g-4">
+        <!-- Loaded via JS -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5 d-none">
+        <div class="mb-4">
+            <div style="width: 120px; height: 120px; margin: 0 auto; background: #F0EDFF; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-folder-open fa-3x" style="color: #4F7DF3;"></i>
+            </div>
+        </div>
+        <h4 class="fw-semibold" style="color: #24324A;">No projects yet</h4>
+        <p class="text-muted mb-4">Create your first project to get started.</p>
+        <button class="btn btn-primary px-4" style="background-color: #4F7DF3; border-color: #4F7DF3;" onclick="openCreateModal()">
+            <i class="fas fa-plus me-2"></i>Create Project
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-5">
+        <div class="spinner-border" style="color: #4F7DF3;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted mt-3">Loading projects...</p>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" aria-labelledby="createProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom" style="border-color: #E7ECF3 !important;">
+                <h5 class="modal-title fw-semibold" id="createProjectModalLabel" style="color: #24324A;">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="createProjectForm" onsubmit="return false;">
+                    <div class="mb-3">
+                        <label for="createProjectName" class="form-label fw-medium" style="color: #24324A;">Project Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="createProjectName" placeholder="Enter project name" required
+                               style="border-color: #E7ECF3; color: #24324A;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="createProjectDesc" class="form-label fw-medium" style="color: #24324A;">Description</label>
+                        <textarea class="form-control" id="createProjectDesc" rows="4" placeholder="Describe the project purpose and scope..."
+                                  style="border-color: #E7ECF3; color: #24324A;"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top" style="border-color: #E7ECF3 !important;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="color: #24324A; border-color: #E7ECF3;">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" style="background-color: #4F7DF3; border-color: #4F7DF3;" onclick="createProject()">
+                    <i class="fas fa-plus me-2"></i>Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom" style="border-color: #E7ECF3 !important;">
+                <h5 class="modal-title fw-semibold" id="editProjectModalLabel" style="color: #24324A;">Edit Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editProjectForm" onsubmit="return false;">
+                    <input type="hidden" id="editProjectId">
+                    <div class="mb-3">
+                        <label for="editProjectName" class="form-label fw-medium" style="color: #24324A;">Project Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editProjectName" placeholder="Enter project name" required
+                               style="border-color: #E7ECF3; color: #24324A;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProjectDesc" class="form-label fw-medium" style="color: #24324A;">Description</label>
+                        <textarea class="form-control" id="editProjectDesc" rows="4" placeholder="Describe the project purpose and scope..."
+                                  style="border-color: #E7ECF3; color: #24324A;"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top" style="border-color: #E7ECF3 !important;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="color: #24324A; border-color: #E7ECF3;">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" style="background-color: #4F7DF3; border-color: #4F7DF3;" onclick="updateProject()">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom" style="border-color: #E7ECF3 !important;">
+                <h5 class="modal-title fw-semibold" id="deleteProjectModalLabel" style="color: #24324A;">Delete Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="mb-1 fw-medium" style="color: #24324A;">Are you sure you want to delete this project?</p>
+                <p class="text-muted small mb-0" id="deleteProjectName"></p>
+                <p class="text-danger small mt-2">This action cannot be undone. All documents, decisions, tasks, and risks will be permanently removed.</p>
+                <input type="hidden" id="deleteProjectId">
+            </div>
+            <div class="modal-footer border-top justify-content-center" style="border-color: #E7ECF3 !important;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="color: #24324A; border-color: #E7ECF3;">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" onclick="deleteProject()">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .project-card {
+        border: 1px solid #E7ECF3;
+        border-radius: 12px;
+        background: #fff;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    .project-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(79, 125, 243, 0.12);
+    }
+    .project-card .card-body {
+        padding: 1.5rem;
+    }
+    .project-card .card-title {
+        color: #24324A;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    .project-card .card-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .project-card .card-footer {
+        background: #F8FAFC;
+        border-top: 1px solid #E7ECF3;
+        padding: 0.75rem 1.5rem;
+    }
+    .project-card .dropdown-toggle::after {
+        display: none;
+    }
+    .status-badge-active {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .status-badge-archived {
+        background-color: #f3f4f6;
+        color: #6b7280;
+    }
+    .status-badge-completed {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    .stat-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let allProjects = [];
+    const createModal = new bootstrap.Modal(document.getElementById('createProjectModal'));
+    const editModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteProjectModal'));
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProjects();
+    });
+
+    async function loadProjects() {
+        const grid = document.getElementById('projectsGrid');
+        const emptyState = document.getElementById('emptyState');
+        const loadingState = document.getElementById('loadingState');
+
+        loadingState.classList.remove('d-none');
+        grid.innerHTML = '';
+        emptyState.classList.add('d-none');
+
+        try {
+            const response = await fetch('/api/projects');
+            const data = await response.json();
+
+            loadingState.classList.add('d-none');
+
+            if (!response.ok) {
+                showToast('Failed to load projects', 'error');
+                return;
+            }
+
+            allProjects = data.projects || data || [];
+
+            if (allProjects.length === 0) {
+                emptyState.classList.remove('d-none');
+                return;
+            }
+
+            renderProjects(allProjects);
+        } catch (error) {
+            loadingState.classList.add('d-none');
+            showToast('Error loading projects: ' + error.message, 'error');
+        }
+    }
+
+    function renderProjects(projects) {
+        const grid = document.getElementById('projectsGrid');
+        grid.innerHTML = '';
+
+        projects.forEach(project => {
+            const statusClass = getStatusBadgeClass(project.status || 'active');
+            const statusLabel = (project.status || 'active').charAt(0).toUpperCase() + (project.status || 'active').slice(1);
+            const description = project.description || 'No description provided';
+            const memberCount = project.member_count || project.members_count || 0;
+            const documentCount = project.document_count || project.documents_count || 0;
+            const createdDate = project.created_at ? new Date(project.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+
+            const col = document.createElement('div');
+            col.className = 'col-12 col-md-6 col-lg-4';
+            col.innerHTML = `
+                <div class="project-card card h-100" onclick="navigateToProject(${project.id}, event)">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="stat-icon" style="background: #F0EDFF;">
+                                    <i class="fas fa-project-diagram" style="color: #4F7DF3;"></i>
+                                </div>
+                                <span class="badge rounded-pill ${statusClass}">${statusLabel}</span>
+                            </div>
+                            <div class="dropdown" onclick="event.stopPropagation();">
+                                <button class="btn btn-sm btn-light dropdown-toggle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                        style="color: #6c757d; background: transparent;">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border" style="border-color: #E7ECF3;">
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="openEditModal(${project.id})"><i class="fas fa-edit me-2 text-muted"></i>Edit</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="openDeleteModal(${project.id}, '${escapeHtml(project.name)}')"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <h5 class="card-title mb-2">${escapeHtml(project.name)}</h5>
+                        <p class="card-text mb-3">${escapeHtml(description)}</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <div class="d-flex gap-3">
+                            <span class="text-muted small" title="Members">
+                                <i class="fas fa-users me-1" style="color: #4F7DF3;"></i>${memberCount}
+                            </span>
+                            <span class="text-muted small" title="Documents">
+                                <i class="fas fa-file-alt me-1" style="color: #43BFA5;"></i>${documentCount}
+                            </span>
+                        </div>
+                        <span class="text-muted small">
+                            <i class="fas fa-calendar me-1"></i>${createdDate}
+                        </span>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(col);
+        });
+    }
+
+    function getStatusBadgeClass(status) {
+        switch (status) {
+            case 'active': return 'status-badge-active';
+            case 'archived': return 'status-badge-archived';
+            case 'completed': return 'status-badge-completed';
+            default: return 'status-badge-active';
+        }
+    }
+
+    function navigateToProject(id, event) {
+        if (event && (event.target.closest('.dropdown') || event.target.closest('.dropdown-menu'))) {
+            return;
+        }
+        window.location.href = `/projects/${id}`;
+    }
+
+    function openCreateModal() {
+        document.getElementById('createProjectForm').reset();
+        createModal.show();
+    }
+
+    async function createProject() {
+        const name = document.getElementById('createProjectName').value.trim();
+        const description = document.getElementById('createProjectDesc').value.trim();
+
+        if (!name) {
+            showToast('Project name is required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                createModal.hide();
+                showToast('Project created successfully', 'success');
+                loadProjects();
+            } else {
+                showToast(data.error || 'Failed to create project', 'error');
+            }
+        } catch (error) {
+            showToast('Error creating project: ' + error.message, 'error');
+        }
+    }
+
+    async function openEditModal(projectId) {
+        const project = allProjects.find(p => p.id === projectId);
+        if (!project) {
+            showToast('Project not found', 'error');
+            return;
+        }
+
+        document.getElementById('editProjectId').value = project.id;
+        document.getElementById('editProjectName').value = project.name;
+        document.getElementById('editProjectDesc').value = project.description || '';
+        editModal.show();
+    }
+
+    async function updateProject() {
+        const id = document.getElementById('editProjectId').value;
+        const name = document.getElementById('editProjectName').value.trim();
+        const description = document.getElementById('editProjectDesc').value.trim();
+
+        if (!name) {
+            showToast('Project name is required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/projects/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                editModal.hide();
+                showToast('Project updated successfully', 'success');
+                loadProjects();
+            } else {
+                showToast(data.error || 'Failed to update project', 'error');
+            }
+        } catch (error) {
+            showToast('Error updating project: ' + error.message, 'error');
+        }
+    }
+
+    function openDeleteModal(projectId, projectName) {
+        document.getElementById('deleteProjectId').value = projectId;
+        document.getElementById('deleteProjectName').textContent = projectName;
+        deleteModal.show();
+    }
+
+    async function deleteProject() {
+        const id = document.getElementById('deleteProjectId').value;
+
+        try {
+            const response = await fetch(`/api/projects/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                deleteModal.hide();
+                showToast('Project deleted successfully', 'success');
+                loadProjects();
+            } else {
+                const data = await response.json();
+                showToast(data.error || 'Failed to delete project', 'error');
+            }
+        } catch (error) {
+            showToast('Error deleting project: ' + error.message, 'error');
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+        const toastEl = document.createElement('div');
+        const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+        const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        toastEl.className = `toast align-items-center text-white ${bgClass} border-0`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas ${icon} me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        toastContainer.appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+        toast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1080';
+        document.body.appendChild(container);
+        return container;
+    }
+</script>
+{% endblock %}
