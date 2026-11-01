@@ -64,7 +64,7 @@
 
         /* ── Hero ── */
         .hero-section {
-            padding: 10rem 0 6rem;
+            padding: 6.5rem 0 3.5rem;
             background: linear-gradient(160deg, #F0EDFF 0%, #F8FAFC 40%, #e8f7f3 100%);
             position: relative;
             overflow: hidden;
@@ -90,11 +90,11 @@
             border-radius: 50%;
         }
         .hero-section h1 {
-            font-size: 3.25rem;
+            font-size: clamp(2rem, 3.2vw, 2.85rem);
             font-weight: 700;
-            line-height: 1.15;
+            line-height: 1.2;
             color: #24324A;
-            max-width: 720px;
+            max-width: 100%;
         }
         .hero-section h1 .text-gradient {
             background: linear-gradient(135deg, #4F7DF3, #43BFA5);
@@ -103,10 +103,10 @@
             background-clip: text;
         }
         .hero-section .hero-sub {
-            font-size: 1.2rem;
+            font-size: clamp(0.95rem, 1.15vw, 1.15rem);
             color: #5a6a80;
-            max-width: 560px;
-            line-height: 1.7;
+            max-width: 540px;
+            line-height: 1.6;
         }
         .btn-primary-landing {
             background: #4F7DF3;
@@ -445,7 +445,7 @@
     <!-- ────────────────────── HERO ────────────────────── -->
     <section class="hero-section">
         <div class="container">
-            <div class="row align-items-center g-5">
+            <div class="row align-items-center g-4 g-lg-5">
                 <div class="col-lg-6" style="position:relative; z-index:1;">
                     <h1>
                         Never Let Critical Project Knowledge
