@@ -38,6 +38,17 @@ os.makedirs(app.config['REPORT_FOLDER'], exist_ok=True)
 
 with app.app_context():
     db.create_all()
+    # Create demo admin user if not present
+    if not User.query.filter_by(username='admin').first():
+        demo_admin = User(
+            username='admin',
+            email='admin@knowbridge.ai',
+            full_name='Lead Architect',
+            role='admin'
+        )
+        demo_admin.set_password('admin123')
+        db.session.add(demo_admin)
+        db.session.commit()
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt', 'csv'}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
