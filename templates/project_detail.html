@@ -73,15 +73,15 @@
     <!-- Upload -->
     <div class="card">
       <div class="card-header"><span class="card-title">Upload Document</span></div>
-      <form method="POST" action="{{ url_for('upload_document', pid=project.id) }}" enctype="multipart/form-data">
+      <form method="POST" action="{{ url_for('upload_document', pid=project.id) }}" enctype="multipart/form-data" onsubmit="return validateUpload(this)">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div id="upload-zone" class="upload-zone">
+        <div id="upload-zone" class="upload-zone" style="cursor:pointer;">
           <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <p>Drag & drop or <strong>click to browse</strong></p>
-          <p style="font-size:.75rem;margin-top:.25rem;">PDF, DOCX, TXT, CSV · Max 16MB</p>
-          <input type="file" id="file-input" name="file" accept=".pdf,.docx,.txt,.csv" style="display:none;" required>
+          <p style="font-size:.75rem;margin-top:.25rem;color:var(--text-secondary);">PDF, DOCX, TXT, CSV · Max 16MB</p>
+          <input type="file" id="file-input" name="file" accept=".pdf,.docx,.txt,.csv" style="position:absolute;left:-9999px;opacity:0;">
         </div>
-        <button type="submit" class="btn btn-primary w-100 mt-2">
+        <button type="submit" id="btn-upload-doc" class="btn btn-primary w-100 mt-2">
           <span data-icon="upload"></span> Upload & Extract Text
         </button>
       </form>

@@ -20,18 +20,18 @@
   <!-- Upload Box -->
   <div class="card">
     <div class="card-header"><span class="card-title">Upload Project Files</span></div>
-    <form method="POST" action="{{ url_for('upload_document', pid=project.id) }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('upload_document', pid=project.id) }}" enctype="multipart/form-data" onsubmit="return validateUpload(this)">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div id="upload-zone" class="upload-zone">
+      <div id="upload-zone" class="upload-zone" style="cursor:pointer;">
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         <p>Drag & drop document or <strong>browse computer</strong></p>
         <p style="font-size:.75rem;margin-top:.35rem;color:var(--text-secondary);">Supports PDF, DOCX, TXT, CSV (Max 16 MB)</p>
-        <input type="file" id="file-input" name="file" accept=".pdf,.docx,.txt,.csv" style="display:none;" required>
+        <input type="file" id="file-input" name="file" accept=".pdf,.docx,.txt,.csv" style="position:absolute;left:-9999px;opacity:0;">
       </div>
       <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.75rem;line-height:1.4;">
         🔒 <strong>Confidentiality Guarantee:</strong> Text is processed strictly within this workspace and stored with relation to project {{ project.id }}.
       </div>
-      <button type="submit" class="btn btn-primary w-100 mt-2">
+      <button type="submit" id="btn-upload-doc" class="btn btn-primary w-100 mt-2">
         <span data-icon="upload"></span> Upload & Extract Content
       </button>
     </form>

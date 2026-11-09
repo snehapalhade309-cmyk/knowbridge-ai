@@ -174,6 +174,20 @@ function updateFileLabel(zoneId, name) {
   }
 }
 
+function validateUpload(form) {
+  const inp = form.querySelector('input[type="file"]');
+  if (!inp || !inp.files || inp.files.length === 0) {
+    ToastManager.show('Please choose a file to upload first!', 'warning');
+    return false;
+  }
+  const btn = form.querySelector('button[type="submit"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;display:inline-block;vertical-align:middle;"></span> Uploading & Extracting...';
+  }
+  return true;
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────
 function initTabs(containerId) {
   const container = document.getElementById(containerId);
