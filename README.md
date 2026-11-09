@@ -16,6 +16,10 @@
 
 [🚀 Live Demo](#-quick-start) · [📖 API Docs](#-rest-api-reference) · [🎯 Features](#-features)
 
+<br/>
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/snehapalhade309-cmyk/knowbridge-ai)
+
 </div>
 
 ---
