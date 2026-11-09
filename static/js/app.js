@@ -50,7 +50,9 @@ document.addEventListener('click', e => {
 // ─── Sidebar Toggle ──────────────────────────────────────────────
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
   if (sidebar) sidebar.classList.toggle('open');
+  if (backdrop) backdrop.classList.toggle('active');
 }
 
 // ─── CSRF Token Helper ───────────────────────────────────────────

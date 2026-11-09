@@ -17,8 +17,14 @@
 .role-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
 .role-card ul { list-style: none; padding: 0; margin: .75rem 0 0; }
 .role-card li { font-size: .875rem; color: var(--text-secondary); padding: .3rem 0; display: flex; gap: .5rem; }
+.roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .section { max-width: 1200px; margin: 0 auto; padding: 4rem 2.5rem; }
-@media(max-width:768px){.stats-row{grid-template-columns:1fr 1fr}.features-grid{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .stats-row{grid-template-columns:repeat(2, 1fr) !important; gap: .75rem !important;}
+  .features-grid{grid-template-columns:1fr !important; gap: 1rem !important;}
+  .roles-grid{grid-template-columns:1fr !important; gap: 1rem !important;}
+  .section{padding: 2.5rem 1rem !important;}
+}
 </style>
 </head>
 <body>
@@ -184,7 +190,7 @@
   <div style="text-align:center;margin-bottom:2rem;">
     <h2 style="font-size:1.75rem;color:var(--forest);">Designed for Every Role</h2>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+  <div class="roles-grid">
     <div class="role-card">
       <div style="font-size:1.5rem;margin-bottom:.5rem;">👑</div>
       <h3 style="font-size:1rem;color:var(--primary);">Admin</h3>
