@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KnowBridge AI — Never Let Critical Knowledge Leave With People</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; margin: 3rem 0; }
+.stat-item { text-align: center; }
+.stat-num { font-size: 2.5rem; font-weight: 800; color: var(--primary); font-family: 'Manrope',sans-serif; }
+.stat-lbl { font-size: .85rem; color: var(--text-secondary); }
+.features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; }
+.workflow-step { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+.step-num { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; flex-shrink: 0; }
+.cta-section { background: var(--forest); border-radius: var(--radius-lg); padding: 3.5rem 2.5rem; text-align: center; color: #fff; margin: 4rem 0; }
+.role-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+.role-card ul { list-style: none; padding: 0; margin: .75rem 0 0; }
+.role-card li { font-size: .875rem; color: var(--text-secondary); padding: .3rem 0; display: flex; gap: .5rem; }
+.section { max-width: 1200px; margin: 0 auto; padding: 4rem 2.5rem; }
+@media(max-width:768px){.stats-row{grid-template-columns:1fr 1fr}.features-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<!-- Nav -->
+<nav class="landing-nav">
+  <div class="landing-brand">
+    <div class="brand-icon" style="width:30px;height:30px;background:var(--primary);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1rem;">K</div>
+    KnowBridge<span class="brand-dot">AI</span>
+  </div>
+  <div class="landing-nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How It Works</a>
+    <a href="#roles">Roles</a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline btn-sm">Sign In</a>
+    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Get Started Free</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero-section" style="max-width:1200px;margin:0 auto;padding-top:7rem;padding-bottom:4rem;">
+  <div style="max-width:620px;">
+    <div class="hero-badge">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+      AI-Powered Knowledge Handover Platform
+    </div>
+    <h1 class="hero-title">
+      Never Let Critical<br>Project Knowledge<br><span class="accent">Leave With People.</span>
+    </h1>
+    <p class="hero-subtitle">
+      KnowBridge AI captures, organises, and preserves every critical decision, task, risk and responsibility — so your team stays aligned even when people move on.
+    </p>
+    <div class="hero-actions">
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+        Create Workspace Account
+      </a>
+      <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg">
+        Sign In to Platform →
+      </a>
+    </div>
+    <div class="stats-row" style="margin:2rem 0 0;">
+      <div class="stat-item"><div class="stat-num">12+</div><div class="stat-lbl">AI Modules</div></div>
+      <div class="stat-item"><div class="stat-num">4</div><div class="stat-lbl">Role Levels</div></div>
+      <div class="stat-item"><div class="stat-num">5</div><div class="stat-lbl">File Formats</div></div>
+      <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">Auditable</div></div>
+    </div>
+  </div>
+  <!-- Dashboard preview card -->
+  <div style="flex:1;display:flex;justify-content:center;align-items:center;padding-left:3rem;" class="hidden-mobile">
+    <div class="card" style="width:100%;max-width:400px;padding:1.5rem;">
+      <div style="font-weight:700;color:var(--text);margin-bottom:1rem;font-size:.95rem;">📊 Project Overview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
+        <div class="stat-card" style="padding:.85rem;flex-direction:column;align-items:flex-start;">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--primary);">24</div>
+          <div style="font-size:.72rem;color:var(--text-secondary);">Active Projects</div>
+        </div>
+        <div class="stat-card" style="padding:.85rem;flex-direction:column;align-items:flex-start;">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--forest);">187</div>
+          <div style="font-size:.72rem;color:var(--text-secondary);">Decisions Saved</div>
+        </div>
+        <div class="stat-card" style="padding:.85rem;flex-direction:column;align-items:flex-start;">
+          <div style="font-size:1.5rem;font-weight:800;color:#D97706;">12</div>
+          <div style="font-size:.72rem;color:var(--text-secondary);">Pending Reviews</div>
+        </div>
+        <div class="stat-card" style="padding:.85rem;flex-direction:column;align-items:flex-start;">
+          <div style="font-size:1.5rem;font-weight:800;color:#059669;">48</div>
+          <div style="font-size:.72rem;color:var(--text-secondary);">Handovers Done</div>
+        </div>
+      </div>
+      <div style="background:var(--sage);border-radius:var(--radius-sm);padding:.75rem;font-size:.8rem;color:var(--forest);">
+        ✅ <strong>AI Analysis Complete</strong> — 3 decisions, 7 tasks, 2 risks extracted from "Project Brief.pdf"
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div style="text-align:center;margin-bottom:2.5rem;">
+    <div class="hero-badge" style="display:inline-flex;margin-bottom:.75rem;">Features</div>
+    <h2 style="font-size:2rem;color:var(--forest);">Everything You Need for Seamless Handovers</h2>
+    <p style="max-width:540px;margin:.75rem auto 0;">From AI-powered document analysis to human review workflows and professional PDF reports.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+      </div>
+      <h3 style="font-size:1rem;margin-bottom:.5rem;">AI Knowledge Extraction</h3>
+      <p style="font-size:.875rem;">Google Gemini analyses your documents and extracts decisions, tasks, risks and dependencies automatically.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:var(--sage);color:var(--forest);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <h3 style="font-size:1rem;margin-bottom:.5rem;">Human Review & Approval</h3>
+      <p style="font-size:.875rem;">AI is never trusted blindly. Every extracted item goes through mandatory human review before becoming verified knowledge.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#FFE2E2;color:#DC2626;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3 style="font-size:1rem;margin-bottom:.5rem;">Risk & Dependency Detection</h3>
+      <p style="font-size:.875rem;">Automatically identifies missing owners, unresolved decisions, timeline conflicts and critical dependencies.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#DBEAFE;color:#1E40AF;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <h3 style="font-size:1rem;margin-bottom:.5rem;">Professional Reports</h3>
+      <p style="font-size:.875rem;">Generate beautiful PDF handover reports with one click. Download CSV for tasks, print or share online.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#D1FAE5;color:#065F46;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h3 style="font-size:1rem;margin-bottom:.5rem;">Acknowledgement Tracking</h3>
+      <p style="font-size:.875rem;">Share reports with incoming team members and track who has acknowledged receiving the handover information.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#FEF3C7;color:#92400E;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <h3 style="font-size:1rem;margin-bottom:.5rem;">Role-Based Access Control</h3>
+      <p style="font-size:.875rem;">Admin, Project Manager and Team Member roles with backend-enforced permissions and full audit trails.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="section" id="how" style="background:var(--card);border-radius:var(--radius-lg);">
+  <div style="max-width:700px;margin:0 auto;">
+    <h2 style="font-size:1.75rem;color:var(--forest);margin-bottom:2rem;">How KnowBridge AI Works</h2>
+    <div class="workflow-step">
+      <div class="step-num">1</div>
+      <div><h4 style="font-size:.95rem;margin-bottom:.25rem;">Create Your Project</h4><p style="font-size:.875rem;">Set up a project, invite team members, assign roles and configure the workspace.</p></div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">2</div>
+      <div><h4 style="font-size:.95rem;margin-bottom:.25rem;">Upload Documents</h4><p style="font-size:.875rem;">Drag and drop PDFs, Word docs, CSVs or text files. Text is extracted automatically.</p></div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">3</div>
+      <div><h4 style="font-size:.95rem;margin-bottom:.25rem;">AI Analyses Everything</h4><p style="font-size:.875rem;">Gemini AI reads your documents and extracts decisions, tasks, risks and dependencies into structured data.</p></div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">4</div>
+      <div><h4 style="font-size:.95rem;margin-bottom:.25rem;">Human Review & Approve</h4><p style="font-size:.875rem;">Project managers review every AI-extracted item. Approve accurate items, reject incorrect ones, add context.</p></div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">5</div>
+      <div><h4 style="font-size:.95rem;margin-bottom:.25rem;">Generate Handover Report</h4><p style="font-size:.875rem;">One click generates a professional PDF report containing only approved, verified information.</p></div>
+    </div>
+    <div class="workflow-step" style="border:none;">
+      <div class="step-num" style="background:var(--forest);">6</div>
+      <div><h4 style="font-size:.95rem;margin-bottom:.25rem;">Share & Acknowledge</h4><p style="font-size:.875rem;">Share the report with incoming team members who acknowledge receipt. Full audit trail maintained.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Roles -->
+<section class="section" id="roles">
+  <div style="text-align:center;margin-bottom:2rem;">
+    <h2 style="font-size:1.75rem;color:var(--forest);">Designed for Every Role</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+    <div class="role-card">
+      <div style="font-size:1.5rem;margin-bottom:.5rem;">👑</div>
+      <h3 style="font-size:1rem;color:var(--primary);">Admin</h3>
+      <ul>
+        <li>✅ Manage all users & roles</li>
+        <li>✅ View all projects & audit logs</li>
+        <li>✅ Approve or reject any handover</li>
+        <li>✅ Manage system permissions</li>
+        <li>✅ Access complete audit trail</li>
+      </ul>
+    </div>
+    <div class="role-card">
+      <div style="font-size:1.5rem;margin-bottom:.5rem;">📋</div>
+      <h3 style="font-size:1rem;color:var(--forest);">Project Manager</h3>
+      <ul>
+        <li>✅ Create & manage projects</li>
+        <li>✅ Upload & analyse documents</li>
+        <li>✅ Review AI-extracted items</li>
+        <li>✅ Generate handover reports</li>
+        <li>✅ Share reports & track acknowledgements</li>
+      </ul>
+    </div>
+    <div class="role-card">
+      <div style="font-size:1.5rem;margin-bottom:.5rem;">👤</div>
+      <h3 style="font-size:1rem;color:var(--text-secondary);">Team Member</h3>
+      <ul>
+        <li>✅ View authorised projects</li>
+        <li>✅ Upload permitted documents</li>
+        <li>✅ View assigned tasks & risks</li>
+        <li>✅ Acknowledge handover reports</li>
+        <li>✅ Update assigned task status</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="max-width:1200px;margin:0 auto;padding:0 2.5rem 5rem;">
+  <div class="cta-section">
+    <h2 style="font-size:2rem;color:#fff;margin-bottom:1rem;">Ready to Preserve Critical Knowledge?</h2>
+    <p style="color:rgba(255,255,255,.7);max-width:480px;margin:0 auto 2rem;font-size:1rem;">Start free today. No credit card required. Demo data included so you can explore immediately.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Create Free Account</a>
+      <a href="{{ url_for('login') }}" class="btn btn-lg" style="background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">Sign In to Demo</a>
+    </div>
+    <div style="margin-top:1.5rem;font-size:.82rem;color:rgba(255,255,255,.45);">Demo credentials: admin@knowbridge.ai / admin123</div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="background:var(--forest);color:rgba(255,255,255,.5);text-align:center;padding:1.5rem;font-size:.82rem;">
+  <div>© 2025 KnowBridge AI — Never Let Critical Knowledge Leave With People.</div>
+  <div style="margin-top:.4rem;">Built with Flask + Google Gemini AI + SQLite</div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<div id="toast-container" class="toast-container"></div>
+</body>
+</html>

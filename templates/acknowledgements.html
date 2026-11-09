@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}My Handovers — KnowBridge AI{% endblock %}
+{% block topbar_title %}My Handovers{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">My Handover Acknowledgements</div>
+    <div class="page-subtitle">Reports shared with you that require your acknowledgement.</div>
+  </div>
+</div>
+
+{% if acks %}
+<div class="card">
+  <div class="card-header"><span class="card-title">Shared Reports ({{ acks|length }})</span></div>
+  <div class="table-wrap">
+    <table class="kb-table" id="main-table">
+      <thead><tr><th>Report</th><th>Project</th><th>Shared</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for ack in acks %}
+        <tr>
+          <td data-label="Report"><strong>{{ ack.report.title if ack.report else 'Unknown' }}</strong></td>
+          <td data-label="Project">{{ ack.report.project.name if ack.report and ack.report.project else 'Unknown' }}</td>
+          <td data-label="Shared">{{ ack.sent_at.strftime('%d %b %Y') }}</td>
+          <td data-label="Status">
+            {% if ack.status == 'acknowledged' %}
+            <span class="badge badge-success">✅ Acknowledged {{ ack.acknowledged_at.strftime('%d %b') if ack.acknowledged_at else '' }}</span>
+            {% else %}
+            <span class="badge badge-warning">⏳ Pending</span>
+            {% endif %}
+          </td>
+          <td data-label="Actions">
+            <div style="display:flex;gap:.4rem;">
+              <a href="{{ url_for('view_report', rid=ack.report_id) }}" class="btn btn-outline btn-sm"><span data-icon="eye"></span> View</a>
+              {% if ack.status == 'pending' %}
+              <form method="POST" action="{{ url_for('confirm_acknowledgement', aid=ack.id) }}" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-success btn-sm">✓ Acknowledge</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  <h3>No reports shared with you</h3>
+  <p>When a project manager shares a handover report with you, it will appear here for acknowledgement.</p>
+</div>
+{% endif %}
+{% endblock %}

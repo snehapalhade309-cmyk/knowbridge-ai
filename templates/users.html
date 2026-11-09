@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}User Management — KnowBridge AI{% endblock %}
+{% block topbar_title %}User Management{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">User Management</div>
+    <div class="page-subtitle">{{ users|length }} registered users</div>
+  </div>
+  <div class="search-bar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="table-search" placeholder="Search users…">
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="kb-table" id="main-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td data-label="User">
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <div style="width:32px;height:32px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--primary);">{{ u.get_initials() }}</div>
+              <div>
+                <div style="font-weight:600;font-size:.875rem;">{{ u.name }}{% if u.id == current_user.id %} <span class="badge badge-sage" style="font-size:.6rem;">You</span>{% endif %}</div>
+              </div>
+            </div>
+          </td>
+          <td data-label="Email" style="font-size:.82rem;">{{ u.email }}</td>
+          <td data-label="Role">
+            {% if u.id != current_user.id %}
+            <form method="POST" action="{{ url_for('change_role', uid=u.id) }}" style="margin:0;display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <select name="role" class="form-select" style="font-size:.75rem;padding:.2rem .5rem;width:auto;" onchange="this.form.submit()">
+                <option value="admin" {% if u.role=='admin' %}selected{% endif %}>Admin</option>
+                <option value="project_manager" {% if u.role=='project_manager' %}selected{% endif %}>Project Manager</option>
+                <option value="outgoing_member" {% if u.role in ('outgoing_member', 'team_member') %}selected{% endif %}>Outgoing Member</option>
+                <option value="incoming_member" {% if u.role=='incoming_member' %}selected{% endif %}>Incoming Member</option>
+              </select>
+            </form>
+            {% else %}
+            <span class="badge badge-primary">{{ u.role.replace('_',' ').title() }}</span>
+            {% endif %}
+          </td>
+          <td data-label="Status">
+            <span class="badge {% if u.is_active %}badge-success{% else %}badge-danger{% endif %}">
+              {% if u.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </td>
+          <td data-label="Joined" style="font-size:.8rem;color:var(--text-secondary);">{{ u.created_at.strftime('%d %b %Y') }}</td>
+          <td data-label="Actions">
+            {% if u.id != current_user.id %}
+            <button class="btn btn-outline btn-sm" onclick="toggleUser({{ u.id }}, this)">
+              {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+async function toggleUser(uid, btn) {
+  const fd = new FormData();
+  fd.append('csrf_token', '{{ csrf_token() }}');
+  const r = await fetch(`/users/${uid}/toggle`, { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token() }}' }, body: fd });
+  const d = await r.json();
+  if (d.success) {
+    btn.textContent = d.is_active ? 'Deactivate' : 'Activate';
+    const badge = btn.closest('tr').querySelector('.badge');
+    if (badge) {
+      badge.textContent = d.is_active ? 'Active' : 'Inactive';
+      badge.className = `badge ${d.is_active ? 'badge-success' : 'badge-danger'}`;
+    }
+    ToastManager.show(`User ${d.is_active ? 'activated' : 'deactivated'}.`, 'success');
+  }
+}
+</script>
+{% endblock %}
+{% endblock %}

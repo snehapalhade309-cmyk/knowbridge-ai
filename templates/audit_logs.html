@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Audit Logs — KnowBridge AI{% endblock %}
+{% block topbar_title %}Audit Logs{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Audit Logs</div>
+  <div class="search-bar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="table-search" placeholder="Filter logs…">
+  </div>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table class="kb-table" id="main-table">
+      <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Resource</th><th>Details</th><th>IP</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="font-size:.78rem;white-space:nowrap;">{{ log.created_at.strftime('%d %b %Y %H:%M') }}</td>
+          <td style="font-size:.82rem;"><strong>{{ log.user.name if log.user else 'System' }}</strong></td>
+          <td><span class="badge {% if 'delete' in log.action %}badge-danger{% elif 'create' in log.action or 'upload' in log.action %}badge-success{% elif 'approved' in log.action %}badge-sage{% elif 'login' in log.action %}badge-info{% else %}badge-muted{% endif %}">{{ log.action.replace('_',' ') }}</span></td>
+          <td style="font-size:.8rem;">{{ log.resource_type or '—' }} {% if log.resource_id %}#{{ log.resource_id }}{% endif %}</td>
+          <td style="font-size:.78rem;color:var(--text-secondary);">{{ (log.details or '—')[:60] }}</td>
+          <td style="font-size:.75rem;color:var(--text-secondary);">{{ log.ip_address or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

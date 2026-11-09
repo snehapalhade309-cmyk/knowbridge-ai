@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Sign In — KnowBridge AI</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-left">
+    <div class="auth-brand">KnowBridge<span style="color:var(--primary);">AI</span></div>
+    <p class="auth-tagline" style="margin-bottom:2rem;">Never Let Critical Project Knowledge Leave With People.</p>
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div style="background:rgba(255,255,255,.07);border-radius:var(--radius);padding:1rem;">
+        <div style="font-weight:600;color:#fff;font-size:.9rem;margin-bottom:.35rem;">🤖 AI-Powered Extraction</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.55);">Google Gemini analyses your documents and extracts decisions, tasks and risks automatically.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border-radius:var(--radius);padding:1rem;">
+        <div style="font-weight:600;color:#fff;font-size:.9rem;margin-bottom:.35rem;">✅ Human Review Required</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.55);">Every AI-extracted item goes through mandatory human approval before appearing in reports.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border-radius:var(--radius);padding:1rem;">
+        <div style="font-weight:600;color:#fff;font-size:.9rem;margin-bottom:.35rem;">📄 Professional Reports</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.55);">Generate and share PDF handover reports with acknowledgement tracking.</div>
+      </div>
+    </div>
+    <div style="margin-top:2rem;padding:1rem;background:rgba(166,75,55,.2);border-radius:var(--radius);border:1px solid rgba(166,75,55,.3);">
+      <div style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:.4rem;">🧪 Demo Credentials</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.55);">Admin: admin@knowbridge.ai / admin123</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.55);">PM: sarah@knowbridge.ai / sarah123</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.55);">Member: alex@knowbridge.ai / alex123</div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-box">
+      <div style="text-align:center;margin-bottom:2rem;">
+        <div style="width:48px;height:48px;background:var(--primary);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.3rem;margin:0 auto .75rem;">K</div>
+        <h1 style="font-size:1.5rem;font-weight:800;color:var(--text);">Welcome back</h1>
+        <p style="font-size:.875rem;">Sign in to your KnowBridge AI account</p>
+      </div>
+      <form method="POST" action="{{ url_for('login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-control" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" placeholder="Your password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100" style="margin-top:.5rem;padding:.7rem;">
+          Sign In to KnowBridge AI
+        </button>
+      </form>
+      <div style="text-align:center;margin-top:1.5rem;font-size:.875rem;color:var(--text-secondary);">
+        Don't have an account? <a href="{{ url_for('register') }}" style="font-weight:600;">Create one free</a>
+      </div>
+      <div style="text-align:center;margin-top:.75rem;">
+        <a href="{{ url_for('index') }}" style="font-size:.8rem;color:var(--text-secondary);">← Back to home</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>document.addEventListener('DOMContentLoaded', () => { {% for c,m in messages %}ToastManager.show(`{{m}}`, '{{c}}');{% endfor %} });</script>
+{% endif %}{% endwith %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

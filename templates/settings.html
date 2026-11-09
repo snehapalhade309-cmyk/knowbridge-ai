@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block title %}Settings & AI Configuration — KnowBridge AI{% endblock %}
+{% block topbar_title %}Settings & Integrations{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Platform Settings & Integrations</div>
+    <div class="page-subtitle">Configure user credentials, AI provider keys, and workspace preferences.</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:1100px;">
+  <!-- Left Column: AI Configuration & Real API Keys -->
+  <div>
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="card-title" style="display:flex;align-items:center;gap:.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+          Google Gemini AI Integration
+        </span>
+        {% if is_gemini_active %}
+        <span class="badge badge-success">● Gemini 1.5 Active</span>
+        {% else %}
+        <span class="badge badge-warning">● Local NLP Fallback</span>
+        {% endif %}
+      </div>
+
+      <div style="padding:1.25rem;">
+        <p style="font-size:.875rem;margin-bottom:1rem;color:var(--text-secondary);">
+          Connect your official <strong>Google Gemini API Key</strong> to enable deep LLM reasoning, contextual extraction of hidden decisions, risk probability scoring, and automated handover summarization.
+        </p>
+
+        {% if is_gemini_active %}
+        <div style="background:var(--sage);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.85rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem;">
+          <span style="font-size:1.2rem;">✨</span>
+          <div style="font-size:.82rem;color:var(--forest);">
+            <strong>Gemini AI Active:</strong> Document extractions use <strong>Gemini 1.5 Flash</strong> in real-time.
+          </div>
+        </div>
+        {% else %}
+        <div style="background:#FFF8E7;border:1px solid #FFE4A3;border-radius:var(--radius-sm);padding:.85rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem;">
+          <span style="font-size:1.2rem;">⚡</span>
+          <div style="font-size:.82rem;color:#856404;">
+            <strong>Offline Fallback Mode:</strong> Currently running on smart keyword/regex extraction. Enter your Gemini API key below to unlock LLM features.
+          </div>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('settings') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="api_key">
+
+          <div class="form-group">
+            <label class="form-label" style="display:flex;justify-content:space-between;">
+              <span>Gemini API Key</span>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="font-size:.78rem;text-decoration:underline;">
+                Get Free API Key from Google AI Studio ↗
+              </a>
+            </label>
+            <div style="position:relative;">
+              <input type="password" id="gemini-key-input" name="gemini_api_key" class="form-control" 
+                     value="{{ gemini_key or '' }}" placeholder="AIzaSy..." style="padding-right:2.5rem;font-family:monospace;">
+              <button type="button" onclick="toggleKeyVisibility()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);">
+                👁️
+              </button>
+            </div>
+            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:.35rem;">
+              Your key is stored securely in the database & <code>.env</code> file. Never exposed to unauthorized users.
+            </div>
+          </div>
+
+          <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
+            <button type="submit" class="btn btn-primary" style="flex:1;">
+              Save & Activate Key
+            </button>
+            <button type="button" class="btn btn-outline" id="btn-test-key" onclick="testApiKeyLive()">
+              Verify Connection
+            </button>
+          </div>
+        </form>
+
+        <div id="test-key-result" style="display:none;margin-top:1rem;padding:.85rem;border-radius:var(--radius-sm);font-size:.82rem;"></div>
+      </div>
+    </div>
+
+    <!-- Workspace Data Management -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Workspace Data Management</span></div>
+      <div style="padding:1.25rem;">
+        <p style="font-size:.875rem;margin-bottom:1rem;color:var(--text-secondary);">
+          Ready to use KnowBridge AI for your real organization? Clean out the initial sample demo projects with one click so your dashboard only reflects genuine team activities.
+        </p>
+        <form method="POST" action="{{ url_for('settings') }}" onsubmit="return confirm('Purge all [DEMO] projects and sample data? Your actual projects will remain untouched.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="clear_demo">
+          <button type="submit" class="btn btn-danger btn-sm" style="display:flex;align-items:center;gap:.4rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            Purge Sample / Demo Projects
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Profile & Security -->
+  <div>
+    <!-- Profile Info -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header"><span class="card-title">User Profile</span></div>
+      <div style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border);">
+          <div style="width:56px;height:56px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:#fff;">
+            {{ current_user.get_initials() }}
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:1.05rem;">{{ current_user.name }}</div>
+            <div style="font-size:.82rem;color:var(--text-secondary);">{{ current_user.email }}</div>
+            <div class="badge badge-sage" style="margin-top:.35rem;">{{ current_user.role.replace('_',' ').title() }}</div>
+          </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="profile">
+
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" name="name" class="form-control" value="{{ current_user.name }}" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address (Sign-in Identity)</label>
+            <input type="email" class="form-control" value="{{ current_user.email }}" disabled style="opacity:.65;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Update Password (optional)</label>
+            <input type="password" name="new_password" class="form-control" placeholder="Leave blank to keep current password" minlength="6">
+          </div>
+
+          <button type="submit" class="btn btn-forest w-100" style="margin-top:1rem;">
+            Save Profile Changes
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Infrastructure Diagnostics -->
+    <div class="card" style="background:var(--card);border:1px solid var(--border);">
+      <div class="card-header"><span class="card-title">System & Storage Specifications</span></div>
+      <div style="padding:1.25rem;font-size:.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:.5rem;">
+        <div style="display:flex;justify-content:space-between;">
+          <span>Database Engine</span>
+          <strong style="color:var(--text);">SQLite (Upgradeable to PostgreSQL)</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Document Parsing</span>
+          <strong style="color:var(--text);">PyMuPDF, pypdf, python-docx, pandas</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Report Export Formats</span>
+          <strong style="color:var(--text);">PDF (ReportLab), Structured CSV</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>API Authentication</span>
+          <strong style="color:var(--text);">JWT Bearer Tokens (HS256) + Web Sessions</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Max File Upload Size</span>
+          <strong style="color:var(--text);">16 MB per file</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+function toggleKeyVisibility() {
+  const inp = document.getElementById('gemini-key-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function testApiKeyLive() {
+  const keyInput = document.getElementById('gemini-key-input');
+  const btn = document.getElementById('btn-test-key');
+  const resultDiv = document.getElementById('test-key-result');
+
+  const key = keyInput.value.trim();
+  if (!key) {
+    ToastManager.show('Please paste an API key first to verify.', 'warning');
+    keyInput.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  resultDiv.style.display = 'block';
+  resultDiv.style.background = 'var(--bg)';
+  resultDiv.style.border = '1px solid var(--border)';
+  resultDiv.style.color = 'var(--text)';
+  resultDiv.innerHTML = 'Connecting to Google Gemini API servers...';
+
+  try {
+    const res = await fetch('/settings/test-ai-key', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRF()
+      },
+      body: JSON.stringify({ api_key: key })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      resultDiv.style.background = 'var(--sage)';
+      resultDiv.style.borderColor = 'var(--sage-dark)';
+      resultDiv.style.color = 'var(--forest)';
+      resultDiv.innerHTML = `<strong>✅ Verification Successful!</strong><br>${data.message}<br><small>Response: "${data.reply}"</small>`;
+      ToastManager.show('Gemini API verified successfully!', 'success');
+    } else {
+      resultDiv.style.background = '#FFE2E2';
+      resultDiv.style.borderColor = '#FCA5A5';
+      resultDiv.style.color = '#B91C1C';
+      resultDiv.innerHTML = `<strong>❌ Verification Failed:</strong><br>${data.error || 'Invalid API Key or Network Error'}`;
+      ToastManager.show('Verification failed. Check API key.', 'danger');
+    }
+  } catch (err) {
+    resultDiv.style.background = '#FFE2E2';
+    resultDiv.style.borderColor = '#FCA5A5';
+    resultDiv.style.color = '#B91C1C';
+    resultDiv.innerHTML = `<strong>❌ Error:</strong> ${err.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verify Connection';
+  }
+}
+</script>
+{% endblock %}
+{% endblock %}

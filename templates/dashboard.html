@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — KnowBridge AI{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Good day, {{ current_user.name.split()[0] }} 👋</div>
+    <div class="page-subtitle">Here's your knowledge handover overview.</div>
+  </div>
+  {% if current_user.is_pm() %}
+  <a href="{{ url_for('projects') }}" class="btn btn-primary" onclick="document.getElementById('create-project-modal').classList.add('show')">
+    <span data-icon="plus"></span> New Project
+  </a>
+  {% endif %}
+</div>
+
+<!-- Stats Grid -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.75rem;">
+  <div class="stat-card">
+    <div class="stat-icon primary"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ total_projects }}</div><div class="stat-label">Total Projects</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon sage"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ total_docs }}</div><div class="stat-label">Total Documents</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon forest"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ pending_tasks }}</div><div class="stat-label">Pending Tasks</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon warning"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ total_risks }}</div><div class="stat-label">Identified Risks</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon success"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ completed_handovers }}</div><div class="stat-label">Completed Handovers</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon danger"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ awaiting_approvals }}</div><div class="stat-label">Awaiting Review</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon primary"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ total_decisions }}</div><div class="stat-label">Extracted Decisions</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon sage"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="stat-info"><div class="stat-value">{{ acknowledged }}</div><div class="stat-label">Acknowledged</div></div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;margin-bottom:1.75rem;">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Project Status</span></div>
+    <div class="chart-container"><canvas id="projectChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">Task Overview</span></div>
+    <div class="chart-container"><canvas id="taskChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">Risk Distribution</span></div>
+    <div class="chart-container"><canvas id="riskChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Line Chart + Activity -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:1.75rem;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Handover Activity</span>
+      <span class="badge badge-muted text-xs">Last 6 months</span>
+    </div>
+    <div class="chart-container" style="height:200px;"><canvas id="activityChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">Recent Activity</span></div>
+    {% for log in recent_logs %}
+    <div class="activity-item">
+      <div class="activity-dot {% if 'delete' in log.action %}danger{% elif 'create' in log.action or 'upload' in log.action %}sage{% elif 'approved' in log.action %}{% else %}{% endif %}"></div>
+      <div class="activity-text">
+        {{ log.action.replace('_',' ').title() }}
+        {% if log.user %}<span class="text-muted"> · {{ log.user.name }}</span>{% endif %}
+      </div>
+      <div class="activity-time">{{ log.created_at.strftime('%H:%M') }}</div>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:1.5rem;">
+      <p>No recent activity.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recent Projects -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Recent Projects</span>
+    <a href="{{ url_for('projects') }}" class="btn btn-outline btn-sm">View All</a>
+  </div>
+  {% if recent_projects %}
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+    {% for p in recent_projects %}
+    <a href="{{ url_for('project_detail', pid=p.id) }}" class="card card-hover" style="padding:1.1rem;text-decoration:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;">
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <div style="width:28px;height:28px;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:var(--primary);">{{ p.name[0].upper() }}</div>
+          {% if p.is_demo %}<span class="demo-label">DEMO</span>{% endif %}
+        </div>
+        <span class="badge {% if p.status=='active' %}badge-success{% elif p.status=='on_hold' %}badge-warning{% elif p.status=='completed' %}badge-sage{% else %}badge-muted{% endif %}">{{ p.status.replace('_',' ').title() }}</span>
+      </div>
+      <div style="font-weight:700;font-size:.9rem;color:var(--text);margin-bottom:.3rem;">{{ p.name[:40] }}{% if p.name|length>40 %}…{% endif %}</div>
+      <div style="font-size:.78rem;color:var(--text-secondary);">{{ p.description[:70] if p.description else 'No description.' }}{% if p.description and p.description|length>70 %}…{% endif %}</div>
+      <div style="margin-top:.7rem;font-size:.72rem;color:var(--text-secondary);">
+        📁 {{ p.documents|length }} docs · 👥 {{ p.members|length }} members
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+    <h3>No projects yet</h3>
+    <p>Create your first project to get started.</p>
+    {% if current_user.is_pm() %}
+    <a href="{{ url_for('projects') }}" class="btn btn-primary mt-2">Create Project</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% block scripts %}
+<script>
+const projData = {{ proj_status_data|safe }};
+const taskData = {{ task_data|safe }};
+const riskData = {{ risk_data|safe }};
+
+createDoughnutChart('projectChart',
+  ['Active','Completed','On Hold','Archived'],
+  projData,
+  ['#059669','#A94F3B','#D97706','#9CA3AF']);
+
+createDoughnutChart('taskChart',
+  ['Pending','In Progress','Completed'],
+  [taskData.pending, taskData.in_progress, taskData.completed],
+  ['#D97706','#2563EB','#059669']);
+
+createDoughnutChart('riskChart',
+  ['High','Medium','Low'],
+  [riskData.high, riskData.medium, riskData.low],
+  ['#DC2626','#D97706','#059669']);
+
+// Activity line chart via API
+fetch('/api/dashboard/chart-data')
+  .then(r=>r.json())
+  .then(d => {
+    createLineChart('activityChart', d.months, d.report_counts, 'Reports Generated');
+  });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }} Error — KnowBridge AI{% endblock %}
+{% block topbar_title %}Error {{ code }}{% endblock %}
+{% block content %}
+<div class="empty-state" style="padding:5rem 1.5rem;">
+  <div style="font-size:4rem;font-weight:800;color:var(--primary);margin-bottom:1rem;">{{ code }}</div>
+  <h3>{{ msg }}</h3>
+  <p style="margin-top:.5rem;">{% if code==404 %}The page you requested does not exist or you don't have permission to view it.{% elif code==403 %}You don't have permission to access this resource.{% else %}Something went wrong on our end. Please try again.{% endif %}</p>
+  <div style="display:flex;gap:.75rem;justify-content:center;margin-top:1.5rem;">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+    <a href="javascript:history.back()" class="btn btn-outline">← Go Back</a>
+  </div>
+</div>
+{% endblock %}

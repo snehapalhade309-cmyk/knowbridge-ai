@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Register — KnowBridge AI</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-left">
+    <div class="auth-brand">KnowBridge<span style="color:var(--primary);">AI</span></div>
+    <p class="auth-tagline" style="margin-bottom:2rem;">Join the platform that ensures critical project knowledge is never lost when people move on.</p>
+    <div style="display:flex;flex-direction:column;gap:.85rem;">
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <div style="width:28px;height:28px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;">1</div>
+        <div style="font-size:.85rem;color:rgba(255,255,255,.7);">Create your free account</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <div style="width:28px;height:28px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;">2</div>
+        <div style="font-size:.85rem;color:rgba(255,255,255,.7);">Create a project and upload documents</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <div style="width:28px;height:28px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;">3</div>
+        <div style="font-size:.85rem;color:rgba(255,255,255,.7);">Let AI extract and organise your knowledge</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <div style="width:28px;height:28px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;">4</div>
+        <div style="font-size:.85rem;color:rgba(255,255,255,.7);">Generate and share professional handover reports</div>
+      </div>
+    </div>
+    <div style="margin-top:2rem;padding:1rem;background:rgba(166,75,55,.2);border-radius:var(--radius);border:1px solid rgba(166,75,55,.3);">
+      <div style="font-size:.8rem;color:rgba(255,255,255,.65);">ℹ️ The first admin account is created automatically. Additional users who register as Admin will be assigned Team Member role.</div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-box">
+      <div style="text-align:center;margin-bottom:2rem;">
+        <div style="width:48px;height:48px;background:var(--forest);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.3rem;margin:0 auto .75rem;">K</div>
+        <h1 style="font-size:1.5rem;font-weight:800;color:var(--text);">Create Account</h1>
+        <p style="font-size:.875rem;">Join KnowBridge AI — free forever</p>
+      </div>
+      <form method="POST" action="{{ url_for('register') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="name" class="form-control" placeholder="Your full name" required minlength="2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" placeholder="Min. 6 characters" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Platform Role</label>
+          <select name="role" class="form-select">
+            <option value="outgoing_member" selected>Outgoing Member (Handing Over)</option>
+            <option value="incoming_member">Incoming Member (Receiving Handover)</option>
+            <option value="project_manager">Project Manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" style="margin-top:.5rem;padding:.7rem;">
+          Create Free Account
+        </button>
+      </form>
+      <div style="text-align:center;margin-top:1.5rem;font-size:.875rem;color:var(--text-secondary);">
+        Already have an account? <a href="{{ url_for('login') }}" style="font-weight:600;">Sign in</a>
+      </div>
+      <div style="text-align:center;margin-top:.75rem;">
+        <a href="{{ url_for('index') }}" style="font-size:.8rem;color:var(--text-secondary);">← Back to home</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>document.addEventListener('DOMContentLoaded', () => { {% for c,m in messages %}ToastManager.show(`{{m}}`, '{{c}}');{% endfor %} });</script>
+{% endif %}{% endwith %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

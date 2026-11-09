@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block topbar_title %}Handover Report{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ report.title }}</div>
+    <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem;">
+      <span class="badge {% if report.status=='approved' %}badge-success{% elif report.status=='shared' %}badge-info{% else %}badge-muted{% endif %}">{{ report.status.upper() }}</span>
+      <span class="text-muted text-sm">Generated {{ report.generated_at.strftime('%d %b %Y') }} by {{ report.generated_by.name if report.generated_by else 'Unknown' }}</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+    <button onclick="window.print()" class="btn btn-outline btn-sm"><span data-icon="print"></span> Print</button>
+    <a href="{{ url_for('download_report_csv', rid=report.id) }}" class="btn btn-outline btn-sm"><span data-icon="download"></span> CSV</a>
+    <a href="{{ url_for('download_report_pdf', rid=report.id) }}" class="btn btn-forest btn-sm"><span data-icon="download"></span> PDF</a>
+    {% if current_user.is_pm() and report.status=='draft' %}
+    <form method="POST" action="{{ url_for('approve_report', rid=report.id) }}" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-success btn-sm">✓ Approve Report</button>
+    </form>
+    {% endif %}
+    {% if current_user.is_pm() and report.status in ('approved','shared') %}
+    <button class="btn btn-primary btn-sm" onclick="Modal.open('share-modal')"><span data-icon="share"></span> Share</button>
+    {% endif %}
+  </div>
+</div>
+
+{% if report.status=='approved' or report.status=='shared' %}
+<div style="background:#D1FAE5;border:1px solid #A7F3D0;border-radius:var(--radius-sm);padding:.75rem 1rem;margin-bottom:1.25rem;font-size:.875rem;color:#065F46;display:flex;align-items:center;gap:.5rem;">
+  ✅ This report has been <strong>approved</strong>{% if report.approved_by %} by {{ report.approved_by.name }}{% endif %}{% if report.approved_at %} on {{ report.approved_at.strftime('%d %b %Y') }}{% endif %}. All content is verified.
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+  <!-- Report Content -->
+  <div>
+    {% set proj = content.get('project', {}) %}
+    <!-- Project Overview -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header"><span class="card-title">📋 Project Overview</span></div>
+      <table style="width:100%;font-size:.875rem;">
+        <tr><td style="padding:.4rem 0;color:var(--text-secondary);width:140px;">Project Name</td><td style="font-weight:600;">{{ proj.get('name','—') }}</td></tr>
+        <tr><td style="padding:.4rem 0;color:var(--text-secondary);">Status</td><td><span class="badge badge-sage">{{ proj.get('status','—') }}</span></td></tr>
+        <tr><td style="padding:.4rem 0;color:var(--text-secondary);">Owner</td><td>{{ proj.get('owner','—') }}</td></tr>
+        <tr><td style="padding:.4rem 0;color:var(--text-secondary);">Description</td><td>{{ proj.get('description','—') }}</td></tr>
+      </table>
+    </div>
+
+    <!-- Decisions -->
+    {% if content.get('decisions') %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header"><span class="card-title">📌 Key Decisions</span><span class="badge badge-primary">{{ content.decisions|length }}</span></div>
+      {% for d in content.decisions %}
+      <div style="padding:.7rem 0;border-bottom:1px solid var(--border-light);">
+        <div style="font-weight:600;font-size:.9rem;color:var(--text);">{{ d.title }}</div>
+        <div style="font-size:.8rem;color:var(--text-secondary);margin-top:.2rem;">
+          👤 {{ d.owner }} {% if d.date and d.date != 'Unknown' %}· 📅 {{ d.date }}{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Tasks -->
+    {% if content.get('tasks') %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header"><span class="card-title">✅ Tasks & Responsibilities</span><span class="badge badge-info">{{ content.tasks|length }}</span></div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Task</th><th>Assignee</th><th>Status</th><th>Priority</th><th>Deadline</th></tr></thead>
+          <tbody>
+            {% for t in content.tasks %}
+            <tr>
+              <td>{{ t.title }}</td>
+              <td>{{ t.assignee }}</td>
+              <td><span class="badge {% if t.status=='completed' %}badge-success{% elif t.status=='in_progress' %}badge-info{% else %}badge-warning{% endif %}">{{ t.status }}</span></td>
+              <td><span class="badge {% if t.priority=='high' %}badge-danger{% elif t.priority=='medium' %}badge-warning{% else %}badge-sage{% endif %}">{{ t.priority }}</span></td>
+              <td>{{ t.deadline }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Risks -->
+    {% if content.get('risks') %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header"><span class="card-title">⚠️ Risks & Dependencies</span><span class="badge badge-danger">{{ content.risks|length }}</span></div>
+      {% for r in content.risks %}
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border-light);">
+        <span class="risk-dot {{ r.level }}"></span>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:.875rem;">{{ r.title }}</div>
+          <div style="font-size:.75rem;color:var(--text-secondary);">Owner: {{ r.owner }} · Status: {{ r.status }}</div>
+        </div>
+        <span class="badge {% if r.level=='high' %}badge-danger{% elif r.level=='medium' %}badge-warning{% else %}badge-success{% endif %}">{{ r.level }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Unresolved Issues -->
+    {% if content.get('issues') %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header"><span class="card-title">🚨 Unresolved Issues</span></div>
+      {% for i in content.issues %}
+      <div style="padding:.5rem 0;border-bottom:1px solid var(--border-light);font-size:.875rem;">• {{ i.content }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Source Documents -->
+    {% if content.get('documents') %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">📁 Source Documents</span></div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Filename</th><th>Type</th><th>Uploaded</th></tr></thead>
+          <tbody>
+            {% for d in content.documents %}
+            <tr><td>{{ d.name }}</td><td><span class="badge badge-muted">{{ d.type.upper() }}</span></td><td>{{ d.uploaded }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar -->
+  <div>
+    <!-- Acknowledgements -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header"><span class="card-title">📬 Acknowledgements</span></div>
+      {% if acks %}
+      {% for ack in acks %}
+      <div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--border-light);">
+        <div style="width:28px;height:28px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--primary);">{{ ack.recipient.get_initials() if ack.recipient else '?' }}</div>
+        <div style="flex:1;">
+          <div style="font-size:.82rem;font-weight:600;">{{ ack.recipient.name if ack.recipient else 'Unknown' }}</div>
+          {% if ack.status == 'acknowledged' %}
+          <div style="font-size:.7rem;color:#059669;">✅ Acknowledged {{ ack.acknowledged_at.strftime('%d %b') if ack.acknowledged_at else '' }}</div>
+          {% else %}
+          <div style="font-size:.7rem;color:#D97706;">⏳ Pending acknowledgement</div>
+          {% endif %}
+        </div>
+        {% if ack.recipient_id == current_user.id and ack.status == 'pending' %}
+        <form method="POST" action="{{ url_for('confirm_acknowledgement', aid=ack.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-success btn-sm">Acknowledge</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="font-size:.82rem;color:var(--text-secondary);">Not shared with anyone yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Report Info -->
+    <div class="card" style="background:var(--sage);">
+      <div style="font-weight:700;color:var(--forest);margin-bottom:.75rem;">Report Details</div>
+      <div style="font-size:.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:.4rem;">
+        <div>📅 Generated: <strong>{{ report.generated_at.strftime('%d %b %Y') }}</strong></div>
+        <div>👤 By: <strong>{{ report.generated_by.name if report.generated_by else 'Unknown' }}</strong></div>
+        <div>📊 Status: <strong>{{ report.status.upper() }}</strong></div>
+        {% if report.approved_by %}
+        <div>✅ Approved by: <strong>{{ report.approved_by.name }}</strong></div>
+        {% endif %}
+        {% if report.summary %}
+        <div class="separator"></div>
+        <div>{{ report.summary }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+{% if current_user.is_pm() %}
+<div class="modal-backdrop" id="share-modal">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">Share Report</span>
+      <button class="modal-close" onclick="Modal.close('share-modal')"><span data-icon="x"></span></button>
+    </div>
+    <form method="POST" action="{{ url_for('share_report', rid=report.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Select Recipient</label>
+          <select name="recipient_id" class="form-select" required>
+            <option value="">— Choose team member —</option>
+            {% for u in users %}
+            <option value="{{ u.id }}">{{ u.name }} ({{ u.role.replace('_',' ').title() }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <p style="font-size:.82rem;color:var(--text-secondary);">The recipient will receive a notification and can acknowledge the handover report.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="Modal.close('share-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary"><span data-icon="share"></span> Share Report</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

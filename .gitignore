@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# Uploaded test documents & temporary files
+uploads/*
+!uploads/.gitkeep
+reports/*
+!reports/.gitkeep
+
+# Operating system artifacts
+.DS_Store
+Thumbs.db

@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% block title %}Projects — KnowBridge AI{% endblock %}
+{% block topbar_title %}Projects{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Projects</div>
+    <div class="page-subtitle">{{ projects|length }} project{{ 's' if projects|length != 1 }} in your workspace</div>
+  </div>
+  {% if current_user.is_pm() %}
+  <button class="btn btn-primary" onclick="Modal.open('create-project-modal')">
+    <span data-icon="plus"></span> New Project
+  </button>
+  {% endif %}
+</div>
+
+<!-- Search & Filter -->
+<div class="card" style="margin-bottom:1.25rem;padding:.85rem 1.1rem;">
+  <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+    <div class="search-bar flex-1">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="table-search" placeholder="Search projects…">
+    </div>
+    <select class="form-select" style="width:160px;" onchange="filterProjects(this.value)">
+      <option value="">All Statuses</option>
+      <option value="active">Active</option>
+      <option value="completed">Completed</option>
+      <option value="on_hold">On Hold</option>
+      <option value="archived">Archived</option>
+    </select>
+  </div>
+</div>
+
+{% if projects %}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;" id="projects-grid">
+  {% for p in projects %}
+  <div class="card card-hover project-card" data-status="{{ p.status }}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.85rem;">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <div style="width:36px;height:36px;background:{% if p.priority=='high' %}var(--primary-light){% elif p.priority=='medium' %}var(--sage){% else %}#F3F4F6{% endif %};border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:{% if p.priority=='high' %}var(--primary){% else %}var(--forest){% endif %};">{{ p.name[0].upper() }}</div>
+        <div>
+          {% if p.is_demo %}<span class="demo-label">DEMO</span>{% endif %}
+          <div style="font-size:.7rem;color:var(--text-secondary);margin-top:.15rem;">
+            <span class="badge {% if p.priority=='high' %}badge-danger{% elif p.priority=='medium' %}badge-warning{% else %}badge-muted{% endif %}" style="font-size:.62rem;">{{ p.priority.upper() }}</span>
+          </div>
+        </div>
+      </div>
+      <span class="badge {% if p.status=='active' %}badge-success{% elif p.status=='on_hold' %}badge-warning{% elif p.status=='completed' %}badge-sage{% else %}badge-muted{% endif %}">
+        {{ p.status.replace('_',' ').title() }}
+      </span>
+    </div>
+    <h3 style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:.4rem;">{{ p.name }}</h3>
+    <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.85rem;min-height:36px;">{{ (p.description or 'No description provided.')[:90] }}{% if p.description and p.description|length>90 %}…{% endif %}</p>
+    <div style="display:flex;gap:1rem;margin-bottom:1rem;font-size:.75rem;color:var(--text-secondary);">
+      <span>📁 {{ p.documents|length }} docs</span>
+      <span>👥 {{ p.members|length }} members</span>
+      <span>✅ {{ p.tasks|length }} tasks</span>
+    </div>
+    {% if p.start_date and p.end_date %}
+    <div class="progress-bar" style="margin-bottom:.6rem;">
+      {% set today = now.date() %}
+      {% if p.start_date <= today <= p.end_date %}
+        {% set total_days = (p.end_date - p.start_date).days %}
+        {% set elapsed = (today - p.start_date).days %}
+        {% set pct = (elapsed / total_days * 100)|int if total_days > 0 else 0 %}
+      {% elif today > p.end_date %}
+        {% set pct = 100 %}
+      {% else %}
+        {% set pct = 0 %}
+      {% endif %}
+      <div class="progress-fill {% if pct >= 100 %}success{% elif pct >= 60 %}warning{% endif %}" style="width:{{ pct }}%"></div>
+    </div>
+    <div style="font-size:.7rem;color:var(--text-secondary);">{{ p.start_date }} → {{ p.end_date }}</div>
+    {% endif %}
+    <div style="margin-top:1rem;display:flex;gap:.5rem;">
+      <a href="{{ url_for('project_detail', pid=p.id) }}" class="btn btn-primary btn-sm flex-1" style="justify-content:center;">Open</a>
+      {% if current_user.is_admin() or p.owner_id == current_user.id %}
+      <button class="btn btn-outline btn-sm" onclick="openEdit({{ p.id }}, '{{ p.name|e }}', '{{ (p.description or '')|e }}', '{{ p.status }}', '{{ p.priority }}', '{{ p.start_date or '' }}', '{{ p.end_date or '' }}')">
+        <span data-icon="edit"></span>
+      </button>
+      <form method="POST" action="{{ url_for('delete_project', pid=p.id) }}" id="del-{{ p.id }}" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('del-{{ p.id }}','Delete project &quot;{{ p.name|e }}&quot;? This removes all documents and data.')">
+          <span data-icon="trash"></span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state" style="padding:5rem 1.5rem;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="opacity:.2;margin-bottom:1rem;"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+  <h3>No projects yet</h3>
+  <p>Create your first project to begin capturing and preserving knowledge.</p>
+  {% if current_user.is_pm() %}
+  <button class="btn btn-primary mt-2" onclick="Modal.open('create-project-modal')">Create First Project</button>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Create Project Modal -->
+{% if current_user.is_pm() %}
+<div class="modal-backdrop" id="create-project-modal">
+  <div class="modal-box" style="max-width:580px;">
+    <div class="modal-header">
+      <span class="modal-title">Create New Project</span>
+      <button class="modal-close" onclick="Modal.close('create-project-modal')"><span data-icon="x"></span></button>
+    </div>
+    <form method="POST" action="{{ url_for('create_project') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Project Name *</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Product Relaunch 2025" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="3" placeholder="Brief description of the project…"></textarea>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="active">Active</option>
+              <option value="on_hold">On Hold</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-select">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">Start Date</label>
+            <input type="date" name="start_date" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date</label>
+            <input type="date" name="end_date" class="form-control">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="Modal.close('create-project-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary"><span data-icon="plus"></span> Create Project</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Project Modal -->
+<div class="modal-backdrop" id="edit-project-modal">
+  <div class="modal-box" style="max-width:580px;">
+    <div class="modal-header">
+      <span class="modal-title">Edit Project</span>
+      <button class="modal-close" onclick="Modal.close('edit-project-modal')"><span data-icon="x"></span></button>
+    </div>
+    <form method="POST" id="edit-project-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Project Name *</label>
+          <input type="text" name="name" id="edit-name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" id="edit-desc" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" id="edit-status" class="form-select">
+              <option value="active">Active</option>
+              <option value="on_hold">On Hold</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select name="priority" id="edit-priority" class="form-select">
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">Start Date</label>
+            <input type="date" name="start_date" id="edit-start" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date</label>
+            <input type="date" name="end_date" id="edit-end" class="form-control">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="Modal.close('edit-project-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% block scripts %}
+<script>
+function filterProjects(status) {
+  document.querySelectorAll('.project-card').forEach(c => {
+    c.style.display = (!status || c.dataset.status === status) ? '' : 'none';
+  });
+}
+function openEdit(id, name, desc, status, priority, start, end) {
+  document.getElementById('edit-project-form').action = `/projects/${id}/edit`;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-desc').value = desc;
+  document.getElementById('edit-status').value = status;
+  document.getElementById('edit-priority').value = priority;
+  document.getElementById('edit-start').value = start;
+  document.getElementById('edit-end').value = end;
+  Modal.open('edit-project-modal');
+}
+// Search filter for project cards
+document.getElementById('table-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.project-card').forEach(c => {
+    c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

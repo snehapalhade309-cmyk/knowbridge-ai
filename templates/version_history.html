@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Version History — {{ project.name }}{% endblock %}
+{% block topbar_title %}Version History{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="font-size:.85rem;color:var(--text-secondary);margin-bottom:.25rem;">
+      <a href="{{ url_for('project_detail', pid=project.id) }}">{{ project.name }}</a> / Version History
+    </div>
+    <div class="page-title">Handover Version History & Traceability</div>
+    <div class="page-subtitle">Detailed ledger of every change, report edition, and approval state recorded for compliance.</div>
+  </div>
+  <div style="display:flex;gap:.6rem;">
+    <a href="{{ url_for('project_detail', pid=project.id) }}" class="btn btn-outline btn-sm">← Back to Project</a>
+  </div>
+</div>
+
+<!-- Project Meta -->
+<div class="card" style="margin-bottom:1.5rem;padding:1.25rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-weight:700;font-size:1.05rem;">{{ project.name }}</div>
+      <div style="font-size:.82rem;color:var(--text-secondary);margin-top:.2rem;">
+        Last Updated: <strong>{{ project.updated_at.strftime('%d %b %Y %H:%M') if project.updated_at else 'Initial' }}</strong> · Owner: <strong>{{ project.owner.name if project.owner else 'Unknown' }}</strong>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;">
+      <span class="badge badge-sage">Workspace Revision: v{{ project.reports|length + 1 }}.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- Version History Records -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Handover Report Editions</span>
+    <span class="badge badge-primary">{{ project.reports|length }} Versions</span>
+  </div>
+  {% if project.reports %}
+  <div class="table-wrap">
+    <table class="kb-table">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Title & Summary</th>
+          <th>Created By</th>
+          <th>Date</th>
+          <th>Approval Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in project.reports %}
+        <tr>
+          <td><span class="badge badge-sage">v{{ loop.revindex }}.0</span></td>
+          <td>
+            <div style="font-weight:600;">{{ r.title }}</div>
+            <div style="font-size:.78rem;color:var(--text-secondary);">{{ r.summary }}</div>
+          </td>
+          <td>{{ r.generated_by.name if r.generated_by else 'Unknown' }}</td>
+          <td>{{ r.generated_at.strftime('%d %b %Y %H:%M') }}</td>
+          <td>
+            <span class="badge {% if r.status=='approved' %}badge-success{% elif r.status=='shared' %}badge-info{% else %}badge-muted{% endif %}">
+              {{ r.status|upper }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:.35rem;">
+              <a href="{{ url_for('view_report', rid=r.id) }}" class="btn btn-outline btn-sm"><span data-icon="eye"></span> View</a>
+              <a href="{{ url_for('download_report_pdf', rid=r.id) }}" class="btn btn-forest btn-sm"><span data-icon="download"></span> PDF</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <h3>No versions generated yet</h3>
+    <p>Generate a Handover Report from the project dashboard to start recording versioned milestones.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Project Audit Trail -->
+<div class="card" style="margin-top:1.5rem;">
+  <div class="card-header">
+    <span class="card-title">Project Change Audit Trail</span>
+    <span class="badge badge-muted">{{ logs|length }} Entries</span>
+  </div>
+  {% if logs %}
+  <div class="table-wrap">
+    <table class="kb-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Actor</th>
+          <th>Action</th>
+          <th>Details</th>
+          <th>Origin IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in logs %}
+        <tr>
+          <td style="font-size:.8rem;white-space:nowrap;">{{ l.created_at.strftime('%d %b %Y %H:%M') }}</td>
+          <td><strong>{{ l.user.name if l.user else 'System' }}</strong></td>
+          <td><span class="badge badge-sage">{{ l.action.replace('_',' ')|title }}</span></td>
+          <td style="font-size:.8rem;color:var(--text-secondary);">{{ l.details or '—' }}</td>
+          <td style="font-size:.78rem;color:var(--text-secondary);">{{ l.ip_address or '127.0.0.1' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:2rem;"><p>No audit trail logs recorded yet for this project.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

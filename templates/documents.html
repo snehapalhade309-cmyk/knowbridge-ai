@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Documents — {{ project.name }}{% endblock %}
+{% block topbar_title %}Document Repository{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="font-size:.85rem;color:var(--text-secondary);margin-bottom:.25rem;">
+      <a href="{{ url_for('project_detail', pid=project.id) }}">{{ project.name }}</a> / Documents
+    </div>
+    <div class="page-title">Document Management</div>
+    <div class="page-subtitle">Upload PDFs, Word documents, CSV and TXT files for AI-powered knowledge extraction.</div>
+  </div>
+  <div style="display:flex;gap:.6rem;">
+    <a href="{{ url_for('project_detail', pid=project.id) }}" class="btn btn-outline btn-sm">← Back to Project</a>
+    <a href="{{ url_for('ai_summary', pid=project.id) }}" class="btn btn-primary btn-sm"><span data-icon="sparkle"></span> View AI Summary</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;">
+  <!-- Upload Box -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Upload Project Files</span></div>
+    <form method="POST" action="{{ url_for('upload_document', pid=project.id) }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div id="upload-zone" class="upload-zone">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Drag & drop document or <strong>browse computer</strong></p>
+        <p style="font-size:.75rem;margin-top:.35rem;color:var(--text-secondary);">Supports PDF, DOCX, TXT, CSV (Max 16 MB)</p>
+        <input type="file" id="file-input" name="file" accept=".pdf,.docx,.txt,.csv" style="display:none;" required>
+      </div>
+      <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.75rem;line-height:1.4;">
+        🔒 <strong>Confidentiality Guarantee:</strong> Text is processed strictly within this workspace and stored with relation to project {{ project.id }}.
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-2">
+        <span data-icon="upload"></span> Upload & Extract Content
+      </button>
+    </form>
+  </div>
+
+  <!-- Document List -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Stored Documents ({{ docs|length }})</span>
+      <div class="search-bar" style="max-width:240px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search-input" placeholder="Search file name...">
+      </div>
+    </div>
+    {% if docs %}
+    <div class="table-wrap">
+      <table class="kb-table" id="docs-table">
+        <thead>
+          <tr>
+            <th>File Name</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Uploaded By</th>
+            <th>Analysis Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in docs %}
+          <tr>
+            <td data-label="File">
+              <div style="font-weight:600;display:flex;align-items:center;gap:.4rem;">
+                <span data-icon="file"></span> {{ doc.original_name }}
+              </div>
+              <div style="font-size:.72rem;color:var(--text-secondary);">Uploaded {{ doc.uploaded_at.strftime('%d %b %Y %H:%M') }}</div>
+            </td>
+            <td data-label="Type"><span class="badge badge-muted">{{ doc.file_type|upper }}</span></td>
+            <td data-label="Size">{{ (doc.file_size / 1024)|round(1) }} KB</td>
+            <td data-label="Uploader">{{ doc.uploader.name if doc.uploader else 'Unknown' }}</td>
+            <td data-label="AI Status">
+              {% if doc.is_analyzed %}
+              <span class="badge badge-success">✓ Analysed</span>
+              {% else %}
+              <span class="badge badge-warning">Pending</span>
+              {% endif %}
+            </td>
+            <td data-label="Actions">
+              <div style="display:flex;gap:.35rem;">
+                {% if not doc.is_analyzed %}
+                <form method="POST" action="{{ url_for('analyze_document', did=doc.id) }}" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-primary btn-sm"><span data-icon="sparkle"></span> Analyse</button>
+                </form>
+                {% endif %}
+                {% if current_user.is_pm() or doc.uploader_id == current_user.id %}
+                <form method="POST" action="{{ url_for('delete_document', did=doc.id) }}" id="deldoc-page-{{ doc.id }}" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('deldoc-page-{{ doc.id }}', 'Delete document {{ doc.original_name|e }}?')">
+                    <span data-icon="trash"></span>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <h3>No documents in this project</h3>
+      <p>Upload PDFs, DOCX, TXT or meeting notes to let AI identify handover information.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+initUploadZone('upload-zone', 'file-input');
+const docInput = document.getElementById('doc-search-input');
+if (docInput) {
+  docInput.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#docs-table tbody tr').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+}
+</script>
+{% endblock %}
+{% endblock %}

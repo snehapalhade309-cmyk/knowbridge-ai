@@ -1,0 +1,419 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }} — KnowBridge AI{% endblock %}
+{% block topbar_title %}{{ project.name }}{% endblock %}
+{% block content %}
+
+{% if project.is_demo %}
+<div class="fallback-banner">
+  🏷️ This is a <strong>DEMO project</strong> pre-loaded with sample data to help you explore KnowBridge AI.
+</div>
+{% endif %}
+
+<div class="page-header">
+  <div>
+    <div style="display:flex;align-items:center;gap:.6rem;">
+      <a href="{{ url_for('projects') }}" style="color:var(--text-secondary);font-size:.875rem;">Projects</a>
+      <span style="color:var(--border);">/</span>
+      <span class="page-title" style="font-size:1.3rem;">{{ project.name }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem;">
+      <span class="badge {% if project.status=='active' %}badge-success{% elif project.status=='on_hold' %}badge-warning{% else %}badge-muted{% endif %}">{{ project.status.replace('_',' ').title() }}</span>
+      <span class="badge {% if project.priority=='high' %}badge-danger{% elif project.priority=='medium' %}badge-warning{% else %}badge-sage{% endif %}">{{ project.priority.upper() }}</span>
+      {% if project.owner %}<span class="text-muted text-sm">Owner: <strong>{{ project.owner.name }}</strong></span>{% endif %}
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+    <a href="{{ url_for('timeline_page', pid=project.id) }}" class="btn btn-outline btn-sm" title="Project timeline">
+      <span data-icon="chart"></span> Timeline
+    </a>
+    <a href="{{ url_for('version_history_page', pid=project.id) }}" class="btn btn-outline btn-sm" title="Version history & audit trail">
+      <span data-icon="log"></span> History
+    </a>
+    <a href="{{ url_for('ai_summary', pid=project.id) }}" class="btn btn-sage btn-sm">
+      <span data-icon="brain"></span> AI Summary
+    </a>
+    {% if current_user.is_pm() %}
+    <a href="{{ url_for('review_page', pid=project.id) }}" class="btn btn-forest btn-sm">
+      <span data-icon="check"></span> Review Items
+      {% set pend = knowledge|selectattr('status','equalto','pending_review')|list|length %}
+      {% if pend > 0 %}<span class="nav-badge" style="background:#D97706;">{{ pend }}</span>{% endif %}
+    </a>
+    <form method="POST" action="{{ url_for('generate_report', pid=project.id) }}" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary btn-sm"><span data-icon="report"></span> Generate Report</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Project Stats -->
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem;">
+  <div class="stat-card"><div class="stat-icon sage"><span data-icon="file"></span></div><div class="stat-info"><div class="stat-value">{{ docs|length }}</div><div class="stat-label">Documents</div></div></div>
+  <div class="stat-card"><div class="stat-icon primary"><span data-icon="tasks"></span></div><div class="stat-info"><div class="stat-value">{{ tasks|length }}</div><div class="stat-label">Tasks</div></div></div>
+  <div class="stat-card"><div class="stat-icon danger"><span data-icon="shield"></span></div><div class="stat-info"><div class="stat-value">{{ risks|length }}</div><div class="stat-label">Risks</div></div></div>
+  <div class="stat-card"><div class="stat-icon forest"><span data-icon="chart"></span></div><div class="stat-info"><div class="stat-value">{{ decisions|length }}</div><div class="stat-label">Decisions</div></div></div>
+  <div class="stat-card"><div class="stat-icon warning"><span data-icon="report"></span></div><div class="stat-info"><div class="stat-value">{{ reports|length }}</div><div class="stat-label">Reports</div></div></div>
+</div>
+
+<!-- Tabs -->
+<div class="kb-tabs" id="project-tabs-nav">
+  <button class="kb-tab active" data-tab="tab-docs">📁 Documents</button>
+  <button class="kb-tab" data-tab="tab-tasks">✅ Tasks</button>
+  <button class="kb-tab" data-tab="tab-risks">⚠️ Risks</button>
+  <button class="kb-tab" data-tab="tab-decisions">📌 Decisions</button>
+  <button class="kb-tab" data-tab="tab-knowledge">🤖 AI Items</button>
+  <button class="kb-tab" data-tab="tab-reports">📄 Reports</button>
+  <button class="kb-tab" data-tab="tab-members">👥 Team</button>
+  <button class="kb-tab" data-tab="tab-activity">📋 Activity</button>
+</div>
+
+<!-- Documents Tab -->
+<div id="tab-docs" class="tab-content">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+    <!-- Upload -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Upload Document</span></div>
+      <form method="POST" action="{{ url_for('upload_document', pid=project.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div id="upload-zone" class="upload-zone">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p>Drag & drop or <strong>click to browse</strong></p>
+          <p style="font-size:.75rem;margin-top:.25rem;">PDF, DOCX, TXT, CSV · Max 16MB</p>
+          <input type="file" id="file-input" name="file" accept=".pdf,.docx,.txt,.csv" style="display:none;" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mt-2">
+          <span data-icon="upload"></span> Upload & Extract Text
+        </button>
+      </form>
+    </div>
+    <!-- Doc list -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Uploaded Documents ({{ docs|length }})</span></div>
+      {% if docs %}
+      <div style="max-height:300px;overflow-y:auto;">
+        {% for doc in docs %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border-light);">
+          <div style="width:32px;height:32px;background:{% if doc.file_type=='pdf' %}#FFE2E2{% elif doc.file_type=='docx' %}#DBEAFE{% elif doc.file_type=='csv' %}#D1FAE5{% else %}#F3F4F6{% endif %};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:{% if doc.file_type=='pdf' %}#DC2626{% elif doc.file_type=='docx' %}#1E40AF{% elif doc.file_type=='csv' %}#065F46{% else %}var(--text-secondary){% endif %};flex-shrink:0;">{{ doc.file_type.upper() }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ doc.original_name }}</div>
+            <div style="font-size:.7rem;color:var(--text-secondary);">{{ (doc.file_size/1024)|int }} KB · {{ doc.uploaded_at.strftime('%d %b') }} · {{ doc.uploader.name if doc.uploader else 'Unknown' }}</div>
+          </div>
+          <div style="display:flex;gap:.35rem;align-items:center;flex-shrink:0;">
+            {% if doc.is_analyzed %}
+            <span class="badge badge-success" style="font-size:.62rem;">✓ Analysed</span>
+            {% else %}
+            <form method="POST" action="{{ url_for('analyze_document', did=doc.id) }}" style="margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-primary btn-sm" title="Run AI Analysis">
+                <span data-icon="sparkle"></span> Analyse
+              </button>
+            </form>
+            {% endif %}
+            {% if current_user.is_pm() or doc.uploader_id == current_user.id %}
+            <form method="POST" action="{{ url_for('delete_document', did=doc.id) }}" style="margin:0;" id="deldoc-{{ doc.id }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="button" class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('deldoc-{{ doc.id }}','Delete &quot;{{ doc.original_name|e }}&quot;?')">
+                <span data-icon="trash"></span>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:2rem;">
+        <p>No documents uploaded yet. Upload a file to begin AI analysis.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Tasks Tab -->
+<div id="tab-tasks" class="tab-content" style="display:none;">
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem;">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Add Task</span></div>
+      <form method="POST" action="{{ url_for('create_task', pid=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group"><label class="form-label">Title *</label><input type="text" name="title" class="form-control" placeholder="Task title" required></div>
+        <div class="form-group"><label class="form-label">Assignee</label><input type="text" name="assignee" class="form-control" placeholder="Name or email"></div>
+        <div class="form-group"><label class="form-label">Deadline</label><input type="date" name="deadline" class="form-control"></div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">Priority</label><select name="priority" class="form-select"><option>high</option><option selected>medium</option><option>low</option></select></div>
+          <div class="form-group"><label class="form-label">Status</label><select name="status" class="form-select"><option value="pending">Pending</option><option value="in_progress">In Progress</option><option value="completed">Completed</option></select></div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100"><span data-icon="plus"></span> Add Task</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Tasks ({{ tasks|length }})</span></div>
+      {% if tasks %}
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Title</th><th>Assignee</th><th>Priority</th><th>Deadline</th><th>Status</th><th>Source</th></tr></thead>
+          <tbody>
+            {% for t in tasks %}
+            <tr>
+              <td data-label="Title">{{ t.title }}</td>
+              <td data-label="Assignee"><span class="badge badge-muted">{{ t.assignee or 'Unassigned' }}</span></td>
+              <td data-label="Priority"><span class="badge {% if t.priority=='high' %}badge-danger{% elif t.priority=='medium' %}badge-warning{% else %}badge-sage{% endif %}">{{ t.priority }}</span></td>
+              <td data-label="Deadline">{{ t.deadline or '—' }}</td>
+              <td data-label="Status">
+                <select class="form-select" style="font-size:.75rem;padding:.2rem .5rem;" onchange="updateTaskStatus({{ t.id }}, this.value)">
+                  <option {% if t.status=='pending' %}selected{% endif %}>pending</option>
+                  <option value="in_progress" {% if t.status=='in_progress' %}selected{% endif %}>in_progress</option>
+                  <option {% if t.status=='completed' %}selected{% endif %}>completed</option>
+                  <option {% if t.status=='blocked' %}selected{% endif %}>blocked</option>
+                </select>
+              </td>
+              <td data-label="Source">{% if t.is_approved %}<span class="badge badge-sage" style="font-size:.62rem;">AI Approved</span>{% else %}<span class="badge badge-muted" style="font-size:.62rem;">Manual</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:2rem;"><p>No tasks yet. Add manually or run AI analysis on documents.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Risks Tab -->
+<div id="tab-risks" class="tab-content" style="display:none;">
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem;">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Add Risk</span></div>
+      <form method="POST" action="{{ url_for('create_risk', pid=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group"><label class="form-label">Title *</label><input type="text" name="title" class="form-control" placeholder="Risk description" required></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2" placeholder="Detailed description…"></textarea></div>
+        <div class="form-group"><label class="form-label">Level</label><select name="level" class="form-select"><option>high</option><option selected>medium</option><option>low</option></select></div>
+        <div class="form-group"><label class="form-label">Risk Owner</label><input type="text" name="risk_owner" class="form-control" placeholder="Owner name"></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        <button type="submit" class="btn btn-primary w-100"><span data-icon="plus"></span> Add Risk</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Risks ({{ risks|length }})</span></div>
+      {% if risks %}
+      {% for r in risks %}
+      <div class="knowledge-card {% if r.level=='high' %}pending{% elif r.level=='medium' %}{% else %}approved{% endif %}">
+        <div class="kc-header">
+          <div class="kc-content">
+            <span class="risk-indicator">
+              <span class="risk-dot {{ r.level }}"></span>
+              <span class="badge {% if r.level=='high' %}badge-danger{% elif r.level=='medium' %}badge-warning{% else %}badge-success{% endif %}">{{ r.level.upper() }}</span>
+            </span>
+            {{ r.title }}
+          </div>
+          <div style="display:flex;gap:.4rem;align-items:center;">
+            <select class="form-select" style="font-size:.72rem;padding:.2rem .5rem;" onchange="updateRiskStatus({{ r.id }}, this.value)">
+              <option {% if r.status=='open' %}selected{% endif %}>open</option>
+              <option value="mitigated" {% if r.status=='mitigated' %}selected{% endif %}>mitigated</option>
+              <option value="resolved" {% if r.status=='resolved' %}selected{% endif %}>resolved</option>
+            </select>
+          </div>
+        </div>
+        {% if r.description %}
+        <div style="font-size:.8rem;color:var(--text-secondary);margin-top:.35rem;">{{ r.description[:200] }}</div>
+        {% endif %}
+        <div class="kc-meta">
+          Owner: <strong>{{ r.risk_owner or 'Unknown' }}</strong>
+          {% if r.is_approved %}· <span style="color:#059669;">AI Approved</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state" style="padding:2rem;"><p>No risks identified yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Decisions Tab -->
+<div id="tab-decisions" class="tab-content" style="display:none;">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Decisions ({{ decisions|length }})</span><span class="badge badge-muted">Approved items only</span></div>
+    {% if decisions %}
+    <div class="table-wrap">
+      <table class="kb-table">
+        <thead><tr><th>Decision</th><th>Owner</th><th>Date</th><th>Status</th><th>Source</th></tr></thead>
+        <tbody>
+          {% for d in decisions %}
+          <tr>
+            <td data-label="Decision">{{ d.title }}</td>
+            <td data-label="Owner">{{ d.owner or 'Unknown' }}</td>
+            <td data-label="Date">{{ d.decision_date or '—' }}</td>
+            <td data-label="Status"><span class="badge {% if d.status=='closed' %}badge-success{% else %}badge-warning{% endif %}">{{ d.status }}</span></td>
+            <td data-label="Source">{% if d.source_doc %}<span class="badge badge-sage" style="font-size:.62rem;">{{ d.source_doc.original_name[:20] }}</span>{% else %}<span class="badge badge-muted" style="font-size:.62rem;">Manual</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem;"><p>No approved decisions yet. Approve AI-extracted items or add manually via AI analysis.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- AI Items Tab -->
+<div id="tab-knowledge" class="tab-content" style="display:none;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">AI-Extracted Items (<span id="pending-review-count">{{ knowledge|selectattr('status','equalto','pending_review')|list|length }}</span> pending)</span>
+      {% if current_user.is_pm() %}
+      <a href="{{ url_for('review_page', pid=project.id) }}" class="btn btn-primary btn-sm"><span data-icon="check"></span> Full Review Page</a>
+      {% endif %}
+    </div>
+    {% if knowledge %}
+    {% for item in knowledge[:20] %}
+    <div class="knowledge-card {{ item.status }}" id="ki-{{ item.id }}">
+      <div class="kc-header">
+        <div>
+          <span class="badge {% if item.category=='decision' %}badge-primary{% elif item.category=='task' %}badge-info{% elif item.category=='risk' %}badge-danger{% elif item.category=='discussion' %}badge-sage{% else %}badge-warning{% endif %}">{{ item.category }}</span>
+          {% if item.is_fallback %}<span class="badge badge-warning" style="font-size:.6rem;" title="Generated by rule-based fallback, not Gemini AI">⚠️ Fallback</span>{% endif %}
+          <span class="badge {% if item.confidence=='high' %}badge-success{% elif item.confidence=='medium' %}badge-warning{% else %}badge-muted{% endif %}" style="font-size:.62rem;">{{ item.confidence }} confidence</span>
+        </div>
+        <div class="kc-actions">
+          {% if item.status == 'pending_review' and current_user.is_pm() %}
+          <button class="btn btn-success btn-sm approve-btn" onclick="approveKnowledge({{ item.id }}, document.getElementById('ki-{{ item.id }}'))">✓ Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectKnowledge({{ item.id }}, document.getElementById('ki-{{ item.id }}'), prompt('Rejection reason:') || '')">✗ Reject</button>
+          {% elif item.status == 'approved' %}
+          <span class="badge badge-success">✅ Approved</span>
+          {% elif item.status == 'rejected' %}
+          <span class="badge badge-danger">❌ Rejected</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="kc-content">{{ item.content }}</div>
+      <div class="kc-meta">
+        Source: {{ item.document.original_name if item.document else 'Unknown' }}
+        · {{ item.created_at.strftime('%d %b %Y') }}
+      </div>
+    </div>
+    {% endfor %}
+    {% if knowledge|length > 20 %}
+    <div style="text-align:center;padding:1rem;"><a href="{{ url_for('review_page', pid=project.id) }}" class="btn btn-outline btn-sm">View all {{ knowledge|length }} items →</a></div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state" style="padding:2rem;">
+      <p>No AI-extracted items yet. Upload a document and click <strong>Analyse</strong> to begin.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Reports Tab -->
+<div id="tab-reports" class="tab-content" style="display:none;">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Handover Reports ({{ reports|length }})</span></div>
+    {% if reports %}
+    {% for r in reports %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.85rem 0;border-bottom:1px solid var(--border-light);">
+      <div>
+        <div style="font-weight:600;font-size:.9rem;color:var(--text);">{{ r.title }}</div>
+        <div style="font-size:.75rem;color:var(--text-secondary);">
+          Generated {{ r.generated_at.strftime('%d %b %Y') }} by {{ r.generated_by.name if r.generated_by else 'Unknown' }}
+          <span class="badge {% if r.status=='approved' %}badge-success{% elif r.status=='shared' %}badge-info{% else %}badge-muted{% endif %}" style="margin-left:.4rem;">{{ r.status }}</span>
+        </div>
+      </div>
+      <a href="{{ url_for('view_report', rid=r.id) }}" class="btn btn-outline btn-sm"><span data-icon="eye"></span> View</a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state" style="padding:2rem;"><p>No reports generated yet. Click "Generate Report" to create one.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Team Tab -->
+<div id="tab-members" class="tab-content" style="display:none;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Team Members ({{ members|length }})</span></div>
+      {% for m in members %}
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border-light);">
+        <div style="width:34px;height:34px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:var(--primary);">{{ m.user.get_initials() if m.user else '?' }}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:.875rem;">{{ m.user.name if m.user else 'Unknown' }}</div>
+          <div style="font-size:.72rem;color:var(--text-secondary);">{{ m.role_in_project.title() }} · {{ m.user.email if m.user else '' }}</div>
+        </div>
+        <span class="badge badge-muted" style="font-size:.62rem;">{{ m.user.role.replace('_',' ').title() if m.user else '' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if current_user.is_pm() or current_user.is_admin() %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Add Member</span></div>
+      <form method="POST" action="{{ url_for('add_member', pid=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label">Select User</label>
+          <select name="user_id" class="form-select" required>
+            <option value="">— Choose user —</option>
+            {% for u in users %}
+            {% if u.id not in members|map(attribute='user_id')|list %}
+            <option value="{{ u.id }}">{{ u.name }} ({{ u.role.replace('_',' ').title() }})</option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role in Project</label>
+          <input type="text" name="role_in_project" class="form-control" placeholder="e.g. developer, analyst…">
+        </div>
+        <button type="submit" class="btn btn-primary w-100"><span data-icon="plus"></span> Add to Project</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Activity Tab -->
+<div id="tab-activity" class="tab-content" style="display:none;">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Project Activity Log</span></div>
+    {% if logs %}
+    {% for log in logs %}
+    <div class="activity-item">
+      <div class="activity-dot {% if 'delete' in log.action %}danger{% elif 'create' in log.action or 'upload' in log.action %}sage{% elif 'approved' in log.action %}{% else %}{% endif %}"></div>
+      <div class="activity-text">
+        <strong>{{ log.action.replace('_',' ').title() }}</strong>
+        {% if log.user %} · {{ log.user.name }}{% endif %}
+        {% if log.details %}<span class="text-muted"> — {{ log.details[:60] }}</span>{% endif %}
+      </div>
+      <div class="activity-time">{{ log.created_at.strftime('%d %b %H:%M') }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state" style="padding:2rem;"><p>No activity recorded for this project yet.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+// Init tabs
+const tabs = document.querySelectorAll('#project-tabs-nav .kb-tab');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById(tab.dataset.tab).style.display = 'block';
+  });
+});
+// Init upload zone
+initUploadZone('upload-zone','file-input');
+// Render icons in dynamically added elements
+document.querySelectorAll('[data-icon]').forEach(el => {
+  const ic = Icons[el.dataset.icon];
+  if (ic) el.innerHTML = ic;
+});
+</script>
+{% endblock %}
+{% endblock %}

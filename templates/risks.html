@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Risks & Dependencies — {{ project.name }}{% endblock %}
+{% block topbar_title %}Risks & Dependencies{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="font-size:.85rem;color:var(--text-secondary);margin-bottom:.25rem;">
+      <a href="{{ url_for('project_detail', pid=project.id) }}">{{ project.name }}</a> / Risks & Dependencies
+    </div>
+    <div class="page-title">Risk & Dependency Management</div>
+    <div class="page-subtitle">Identify vulnerabilities, missing owners, and blockers before team transitions occur.</div>
+  </div>
+  <div style="display:flex;gap:.6rem;">
+    <a href="{{ url_for('project_detail', pid=project.id) }}" class="btn btn-outline btn-sm">← Back to Project</a>
+    <button class="btn btn-primary btn-sm" onclick="Modal.open('new-risk-modal')"><span data-icon="plus"></span> Add Risk</button>
+  </div>
+</div>
+
+<!-- Risk Breakdown Stats -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+  <div class="stat-card">
+    <div class="stat-icon danger"><span data-icon="shield"></span></div>
+    <div class="stat-info"><div class="stat-value">{{ risks|selectattr('level','equalto','high')|list|length }}</div><div class="stat-label">High Severity</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon warning"><span data-icon="alert"></span></div>
+    <div class="stat-info"><div class="stat-value">{{ risks|selectattr('level','equalto','medium')|list|length }}</div><div class="stat-label">Medium Severity</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon sage"><span data-icon="check"></span></div>
+    <div class="stat-info"><div class="stat-value">{{ risks|selectattr('level','equalto','low')|list|length }}</div><div class="stat-label">Low Severity</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon forest"><span data-icon="tasks"></span></div>
+    <div class="stat-info"><div class="stat-value">{{ risks|selectattr('status','equalto','resolved')|list|length }}</div><div class="stat-label">Resolved</div></div>
+  </div>
+</div>
+
+<!-- Risk Items List -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Identified Risks & Vulnerabilities</span>
+    <span class="badge badge-primary">{{ risks|length }} Logged</span>
+  </div>
+  {% if risks %}
+  <div style="display:flex;flex-direction:column;gap:.75rem;">
+    {% for r in risks %}
+    <div class="knowledge-card {% if r.level=='high' %}pending{% elif r.level=='medium' %}{% else %}approved{% endif %}">
+      <div class="kc-header">
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <span class="risk-dot {{ r.level }}"></span>
+          <span class="badge {% if r.level=='high' %}badge-danger{% elif r.level=='medium' %}badge-warning{% else %}badge-success{% endif %}">
+            {{ r.level|upper }} RISK
+          </span>
+          <span class="badge {% if r.status=='resolved' %}badge-success{% elif r.status=='mitigated' %}badge-sage{% else %}badge-warning{% endif %}">
+            {{ r.status|title }}
+          </span>
+          <strong style="font-size:.95rem;color:var(--text);">{{ r.title }}</strong>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <select class="form-select" style="font-size:.75rem;padding:.2rem .5rem;" onchange="updateRiskStatus({{ r.id }}, this.value)">
+            <option value="open" {% if r.status=='open' %}selected{% endif %}>Open</option>
+            <option value="mitigated" {% if r.status=='mitigated' %}selected{% endif %}>Mitigated</option>
+            <option value="resolved" {% if r.status=='resolved' %}selected{% endif %}>Resolved</option>
+          </select>
+        </div>
+      </div>
+      {% if r.description %}
+      <div style="font-size:.85rem;color:var(--text);margin:.4rem 0;">{{ r.description }}</div>
+      {% endif %}
+      {% if r.notes %}
+      <div style="background:var(--bg);padding:.5rem .75rem;border-radius:var(--radius-sm);font-size:.8rem;color:var(--text-secondary);margin-top:.4rem;">
+        <strong>Mitigation Notes:</strong> {{ r.notes }}
+      </div>
+      {% endif %}
+      <div class="kc-meta" style="margin-top:.5rem;">
+        <span>Assigned Risk Owner: <strong>{{ r.risk_owner or 'Unassigned / Unknown' }}</strong></span>
+        · <span>Recorded on {{ r.created_at.strftime('%d %b %Y') }}</span>
+        {% if r.is_approved %}
+        · <span class="badge badge-sage" style="font-size:.65rem;">Verified in Handover</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <h3>No risks detected</h3>
+    <p>Run AI document analysis to detect missing owners, unconfirmed dates, or add risks manually.</p>
+    <button class="btn btn-primary mt-2" onclick="Modal.open('new-risk-modal')"><span data-icon="plus"></span> Add Risk</button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: New Risk -->
+<div class="modal-backdrop" id="new-risk-modal">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title">Log New Risk or Dependency</span>
+      <button class="modal-close" onclick="Modal.close('new-risk-modal')"><span data-icon="x"></span></button>
+    </div>
+    <form method="POST" action="{{ url_for('create_risk', pid=project.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Risk Title *</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Key database credential holder leaving next week" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Risk Description</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Impact, consequence, or context..."></textarea>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">Severity Level</label>
+            <select name="level" class="form-select">
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Risk Owner</label>
+            <input type="text" name="risk_owner" class="form-control" placeholder="Responsible owner">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mitigation Notes / Action Plan</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="How is this risk being mitigated?"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="Modal.close('new-risk-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary"><span data-icon="plus"></span> Save Risk</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,708 @@
+{% extends 'base.html' %}
+{% block title %}REST API Hub & Interactive Explorer — KnowBridge AI{% endblock %}
+{% block topbar_title %}REST API Reference & Live Tester{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">REST API Hub & Live Interactive Explorer</div>
+    <div class="page-subtitle">Test all 34+ KnowBridge AI REST endpoints in real-time directly from your browser.</div>
+  </div>
+  <div style="display:flex;gap:.5rem;align-items:center;">
+    <span class="badge badge-success">● API Engine Live</span>
+    <span class="badge badge-sage">JWT Bearer Auth</span>
+    <span class="badge badge-primary">34+ Endpoints</span>
+  </div>
+</div>
+
+<!-- Bearer Token Box -->
+<div class="card" style="margin-bottom:1.5rem;border:1px solid var(--forest);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-weight:700;color:var(--text);font-size:.95rem;margin-bottom:.25rem;">🔑 Your Active JWT Bearer Token</div>
+      <div style="font-size:.78rem;color:var(--text-secondary);">Include this in every API request: <code>Authorization: Bearer &lt;token&gt;</code></div>
+    </div>
+    <div style="display:flex;gap:.5rem;">
+      <button class="btn btn-primary btn-sm" onclick="copyToken()">📋 Copy Token</button>
+      <button class="btn btn-outline btn-sm" onclick="refreshToken()">🔄 Refresh</button>
+    </div>
+  </div>
+  <div style="margin-top:.85rem;background:var(--bg);padding:.7rem 1rem;border-radius:var(--radius-sm);border:1px solid var(--border);font-family:monospace;font-size:.78rem;color:var(--forest);word-break:break-all;user-select:all;cursor:text;" id="jwt-token-display">{{ user_token }}</div>
+  <div style="margin-top:.6rem;font-size:.75rem;color:var(--text-secondary);">
+    Logged in as: <strong>{{ current_user.name }}</strong> &nbsp;|&nbsp; Role: <strong>{{ current_user.role|title }}</strong> &nbsp;|&nbsp;
+    Token expires: 1 hour (re-login to refresh)
+  </div>
+</div>
+
+<!-- Interactive Live Tester Console -->
+<div class="card" style="margin-bottom:2rem;border:2px solid var(--forest);box-shadow:var(--shadow-md);" id="api-console">
+  <div class="card-header" style="background:var(--forest);color:#fff;border-radius:var(--radius-sm) var(--radius-sm) 0 0;">
+    <span style="font-weight:700;display:flex;align-items:center;gap:.5rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Live API Testing Console
+    </span>
+    <span style="font-size:.74rem;background:rgba(255,255,255,.18);padding:.2rem .65rem;border-radius:20px;">Direct Backend Execution — No Mocks</span>
+  </div>
+  <div style="padding:1.5rem;">
+    <!-- URL bar -->
+    <div style="display:grid;grid-template-columns:120px 1fr auto;gap:.65rem;margin-bottom:.85rem;align-items:center;">
+      <select id="api-method" class="form-select" style="font-weight:700;" onchange="onMethodChange()">
+        <option value="GET" style="color:#22c55e;">GET</option>
+        <option value="POST" style="color:#3b82f6;">POST</option>
+        <option value="PUT" style="color:#f59e0b;">PUT</option>
+        <option value="DELETE" style="color:#ef4444;">DELETE</option>
+      </select>
+      <input type="text" id="api-url" class="form-control" value="/api/auth/me" placeholder="/api/..." style="font-family:monospace;font-size:.88rem;">
+      <button class="btn btn-primary" id="btn-run-api" onclick="executeApiCall()" style="min-width:140px;font-weight:600;">
+        ▶ Send Request
+      </button>
+    </div>
+
+    <!-- Quick Presets row -->
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-bottom:1.1rem;padding:.7rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">
+      <span style="font-size:.74rem;font-weight:700;color:var(--text-secondary);white-space:nowrap;">⚡ Quick Tests:</span>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('GET','/api/auth/me')">GET /auth/me</button>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('GET','/api/projects')">GET /projects</button>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('GET','/api/analytics/dashboard')">GET /analytics</button>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('GET','/api/tasks')">GET /tasks</button>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('GET','/api/decisions')">GET /decisions</button>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('GET','/api/handovers')">GET /handovers</button>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('POST','/api/ai/extract-decisions','{\"text\":\"Decision made on 2025-05-10: adopt microservices. Owner: Alex.\"}')">AI Extract</button>
+      <button class="btn btn-outline btn-sm" style="font-size:.73rem;" onclick="setPreset('POST','/api/ai/detect-risks','{\"text\":\"Critical bottleneck. No failover. Delayed vendor.\"}')">AI Risks</button>
+    </div>
+
+    <!-- Request Body -->
+    <div id="request-body-container" style="display:none;margin-bottom:1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
+        <label class="form-label" style="margin:0;">Request JSON Body:</label>
+        <button class="btn btn-outline btn-sm" style="font-size:.72rem;" onclick="formatJson()">{ } Format</button>
+      </div>
+      <textarea id="api-body" class="form-control" rows="5" style="font-family:monospace;font-size:.82rem;">{}</textarea>
+    </div>
+
+    <!-- Response area -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+        <label class="form-label" style="margin:0;">Live Response Output:</label>
+        <div style="display:flex;gap:.4rem;align-items:center;">
+          <span id="response-status-badge" style="display:none;" class="badge"></span>
+          <button class="btn btn-outline btn-sm" style="font-size:.72rem;" onclick="copyResponse()">Copy Response</button>
+        </div>
+      </div>
+      <pre id="api-response" style="background:#1a2332;color:#e2e8f0;padding:1.25rem;border-radius:var(--radius-sm);font-family:'Courier New',monospace;font-size:.82rem;min-height:160px;max-height:420px;overflow:auto;white-space:pre-wrap;line-height:1.5;">Click "Send Request" or use a Quick Test above to see the live API response here.</pre>
+    </div>
+
+    <!-- cURL snippet -->
+    <div id="curl-container" style="display:none;margin-top:1rem;">
+      <label class="form-label" style="font-size:.78rem;">Equivalent cURL command:</label>
+      <pre id="curl-snippet" style="background:var(--bg);border:1px solid var(--border);padding:.7rem 1rem;border-radius:var(--radius-sm);font-family:monospace;font-size:.75rem;color:var(--text);white-space:pre-wrap;cursor:pointer;" title="Click to copy" onclick="copyCurl()"></pre>
+    </div>
+  </div>
+</div>
+
+<!-- Complete Endpoint Reference -->
+<div style="display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;">
+
+  <!-- Sidebar nav for sections -->
+  <div style="position:sticky;top:80px;">
+    <div class="card" style="padding:.75rem;">
+      <div style="font-size:.8rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Jump to Section</div>
+      <div style="display:flex;flex-direction:column;gap:.2rem;">
+        <a href="#sec-auth" class="api-nav-link">🔐 Authentication (4)</a>
+        <a href="#sec-projects" class="api-nav-link">📁 Projects (5)</a>
+        <a href="#sec-documents" class="api-nav-link">📄 Documents (4)</a>
+        <a href="#sec-ai" class="api-nav-link">🤖 AI Processing (5)</a>
+        <a href="#sec-tasks" class="api-nav-link">✅ Tasks (3)</a>
+        <a href="#sec-decisions" class="api-nav-link">💡 Decisions (2)</a>
+        <a href="#sec-reviews" class="api-nav-link">👁 Reviews (3)</a>
+        <a href="#sec-handovers" class="api-nav-link">📦 Handovers (5)</a>
+        <a href="#sec-ack" class="api-nav-link">✍ Acknowledgements (3)</a>
+        <a href="#sec-analytics" class="api-nav-link">📊 Analytics (1)</a>
+        <a href="#sec-risks" class="api-nav-link">⚠ Risks (1)</a>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1rem;padding:.75rem;background:var(--sage-light,#eaf2ef);">
+      <div style="font-size:.78rem;font-weight:700;color:var(--forest);margin-bottom:.4rem;">Auth Header Format</div>
+      <code style="font-size:.72rem;word-break:break-all;">Authorization: Bearer {token}</code>
+      <div style="font-size:.7rem;color:var(--text-secondary);margin-top:.35rem;">All endpoints marked 🔒 require authentication.</div>
+    </div>
+  </div>
+
+  <!-- Main endpoint tables -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+    <!-- Authentication -->
+    <div class="card" id="sec-auth">
+      <div class="card-header">
+        <span class="card-title">🔐 Authentication Endpoints</span>
+        <span class="badge badge-muted">4 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/auth/register</code></td>
+              <td>Register new user, returns JWT token</td>
+              <td><span class="badge badge-muted">Public</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/auth/register','{&quot;name&quot;:&quot;New User&quot;,&quot;email&quot;:&quot;newuser@test.com&quot;,&quot;password&quot;:&quot;secret123&quot;,&quot;role&quot;:&quot;outgoing_member&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/auth/login</code></td>
+              <td>Login with email/password → JWT Bearer token</td>
+              <td><span class="badge badge-muted">Public</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/auth/login','{&quot;email&quot;:&quot;admin@knowbridge.ai&quot;,&quot;password&quot;:&quot;admin123&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/auth/me</code></td>
+              <td>Current user profile, roles & permissions</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/auth/me')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/auth/logout</code></td>
+              <td>Invalidate session cookie</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/auth/logout','{}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Projects -->
+    <div class="card" id="sec-projects">
+      <div class="card-header">
+        <span class="card-title">📁 Project Management Endpoints</span>
+        <span class="badge badge-muted">5 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/projects</code></td>
+              <td>List all accessible projects with counts</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/projects')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/projects</code></td>
+              <td>Create new project workspace</td>
+              <td>🔒 PM/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/projects','{&quot;name&quot;:&quot;New Project&quot;,&quot;description&quot;:&quot;Via API&quot;,&quot;status&quot;:&quot;active&quot;,&quot;priority&quot;:&quot;high&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/projects/&lt;id&gt;</code></td>
+              <td>Get single project with full details</td>
+              <td>🔒 Member</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/projects/1')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge put">PUT</span></td>
+              <td><code>/api/projects/&lt;id&gt;</code></td>
+              <td>Update project name, status, priority, dates</td>
+              <td>🔒 Owner/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('PUT','/api/projects/1','{&quot;status&quot;:&quot;active&quot;,&quot;priority&quot;:&quot;high&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge delete">DELETE</span></td>
+              <td><code>/api/projects/&lt;id&gt;</code></td>
+              <td>Delete project and cascade related data</td>
+              <td>🔒 Owner/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('DELETE','/api/projects/999')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="card" id="sec-documents">
+      <div class="card-header">
+        <span class="card-title">📄 Document Management Endpoints</span>
+        <span class="badge badge-muted">4 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/documents/upload</code></td>
+              <td>Upload PDF/DOCX/CSV/TXT with auto-extraction (multipart/form-data)</td>
+              <td>🔒</td>
+              <td><a href="{{ url_for('projects') }}" class="btn btn-outline btn-sm">Use UI</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/documents</code></td>
+              <td>List documents (optional ?project_id=1)</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/documents')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/documents/&lt;id&gt;</code></td>
+              <td>Get document metadata and extracted text preview</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/documents/1')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge delete">DELETE</span></td>
+              <td><code>/api/documents/&lt;id&gt;</code></td>
+              <td>Delete document and remove from storage</td>
+              <td>🔒 Owner/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('DELETE','/api/documents/999')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AI Processing -->
+    <div class="card" id="sec-ai">
+      <div class="card-header" style="background:linear-gradient(90deg, var(--ivory) 0%, #eaf2ef 100%);">
+        <span class="card-title">🤖 AI Processing Endpoints</span>
+        <span class="badge badge-sage">5 endpoints — Gemini + Local NLP</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Engine</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/ai/analyze/&lt;doc_id&gt;</code></td>
+              <td>Run full AI analysis on uploaded document → extract decisions, tasks, risks</td>
+              <td><span class="badge badge-sage">Gemini/NLP</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/ai/analyze/1','{}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/ai/results/&lt;project_id&gt;</code></td>
+              <td>Get all extracted knowledge items with document citations</td>
+              <td><span class="badge badge-muted">DB</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/ai/results/1')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/ai/extract-decisions</code></td>
+              <td>Direct NLP extraction of decisions from raw text</td>
+              <td><span class="badge badge-sage">NLP</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/ai/extract-decisions','{&quot;text&quot;:&quot;Decided to adopt PostgreSQL on 2025-05-10. Owner: Alex Chen.&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/ai/detect-risks</code></td>
+              <td>Direct NLP risk detection from raw text</td>
+              <td><span class="badge badge-sage">NLP</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/ai/detect-risks','{&quot;text&quot;:&quot;Critical risk: No fallback. Delayed vendor. Single point of failure.&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/ai/summarize</code></td>
+              <td>Summarise raw text or project knowledge stats</td>
+              <td><span class="badge badge-sage">NLP</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/ai/summarize','{&quot;text&quot;:&quot;Project update: John handles deployment by Friday. Database migration scheduled.&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="card" id="sec-tasks">
+      <div class="card-header">
+        <span class="card-title">✅ Task Management Endpoints</span>
+        <span class="badge badge-muted">3 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/tasks</code></td>
+              <td>List tasks (optional ?project_id=1&status=pending)</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/tasks')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/tasks</code></td>
+              <td>Create task with title, assignee, priority, deadline</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/tasks','{&quot;project_id&quot;:1,&quot;title&quot;:&quot;Deploy Production Build&quot;,&quot;assignee&quot;:&quot;Alex Chen&quot;,&quot;priority&quot;:&quot;high&quot;,&quot;deadline&quot;:&quot;2025-07-15&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge put">PUT</span></td>
+              <td><code>/api/tasks/&lt;id&gt;</code></td>
+              <td>Update task status, assignee, priority</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('PUT','/api/tasks/1','{&quot;status&quot;:&quot;in_progress&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Decisions -->
+    <div class="card" id="sec-decisions">
+      <div class="card-header">
+        <span class="card-title">💡 Decision Tracking Endpoints</span>
+        <span class="badge badge-muted">2 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/decisions</code></td>
+              <td>List decisions (optional ?project_id=1)</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/decisions')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/decisions</code></td>
+              <td>Log decision with owner, date, evidence</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/decisions','{&quot;project_id&quot;:1,&quot;title&quot;:&quot;Adopt Microservices&quot;,&quot;owner&quot;:&quot;Sarah Johnson&quot;,&quot;decision_date&quot;:&quot;2025-05-01&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reviews -->
+    <div class="card" id="sec-reviews">
+      <div class="card-header">
+        <span class="card-title">👁 Human Review & Approval Endpoints</span>
+        <span class="badge badge-muted">3 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/reviews</code></td>
+              <td>List AI-extracted items pending human review</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/reviews')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/reviews/&lt;id&gt;/approve</code></td>
+              <td>Approve extracted knowledge item → marks as verified</td>
+              <td>🔒 PM/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/reviews/1/approve','{&quot;notes&quot;:&quot;Verified against meeting notes.&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/reviews/&lt;id&gt;/reject</code></td>
+              <td>Reject extracted item with reason</td>
+              <td>🔒 PM/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/reviews/1/reject','{&quot;reason&quot;:&quot;Incorrect context extracted.&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Handovers -->
+    <div class="card" id="sec-handovers">
+      <div class="card-header">
+        <span class="card-title">📦 Handover Report Endpoints</span>
+        <span class="badge badge-muted">5 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/handovers/generate</code></td>
+              <td>Generate full handover report from project data</td>
+              <td>🔒 PM/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/handovers/generate','{&quot;project_id&quot;:1,&quot;title&quot;:&quot;Final Handover Package&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/handovers</code></td>
+              <td>List all handover reports with status</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/handovers')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/handovers/&lt;id&gt;</code></td>
+              <td>Get single handover with full structured JSON content</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/handovers/1')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/handovers/&lt;id&gt;/approve</code></td>
+              <td>Approve handover report → available to recipients</td>
+              <td>🔒 PM/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/handovers/1/approve','{&quot;notes&quot;:&quot;Reviewed and approved.&quot;}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/handovers/&lt;id&gt;/reject</code></td>
+              <td>Reject handover — returns to draft</td>
+              <td>🔒 PM/Admin</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/handovers/1/reject','{&quot;reason&quot;:&quot;Missing risk section.&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Acknowledgements -->
+    <div class="card" id="sec-ack">
+      <div class="card-header">
+        <span class="card-title">✍ Acknowledgement Tracking Endpoints</span>
+        <span class="badge badge-muted">3 endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/acknowledgements</code></td>
+              <td>List handovers pending acknowledgement for current user</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/acknowledgements')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/acknowledgements/&lt;handover_id&gt;</code></td>
+              <td>Get acknowledgements for a specific handover report</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/acknowledgements/1')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/acknowledgements/&lt;id&gt;/confirm</code></td>
+              <td>Recipient signs off: acknowledges receipt of handover</td>
+              <td>🔒 Recipient</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/acknowledgements/1/confirm','{&quot;notes&quot;:&quot;Received and understood.&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="card" id="sec-analytics">
+      <div class="card-header">
+        <span class="card-title">📊 Analytics Endpoint</span>
+        <span class="badge badge-muted">1 endpoint</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/analytics/dashboard</code></td>
+              <td>Live platform statistics: projects, tasks, risks, handovers, review queue</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('GET','/api/analytics/dashboard')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Risks -->
+    <div class="card" id="sec-risks">
+      <div class="card-header">
+        <span class="card-title">⚠ Risk & Dependency Endpoint</span>
+        <span class="badge badge-muted">1 endpoint</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge put">PUT</span></td>
+              <td><code>/api/risks/&lt;id&gt;</code></td>
+              <td>Update risk status (open/mitigated/resolved) or severity level</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('PUT','/api/risks/1','{&quot;status&quot;:&quot;mitigated&quot;,&quot;level&quot;:&quot;low&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end main -->
+</div><!-- end grid -->
+
+<style>
+.method-badge { display:inline-block; padding:.18rem .55rem; border-radius:4px; font-size:.7rem; font-weight:800; font-family:monospace; letter-spacing:.03em; }
+.method-badge.get    { background:#dcfce7; color:#15803d; }
+.method-badge.post   { background:#dbeafe; color:#1d4ed8; }
+.method-badge.put    { background:#fef3c7; color:#b45309; }
+.method-badge.delete { background:#fee2e2; color:#b91c1c; }
+.api-nav-link { display:block; padding:.35rem .6rem; border-radius:var(--radius-sm); font-size:.78rem; color:var(--text-secondary); text-decoration:none; transition:background .15s,color .15s; }
+.api-nav-link:hover { background:var(--border); color:var(--forest); }
+</style>
+
+{% block scripts %}
+<script>
+const userToken = document.getElementById('jwt-token-display').textContent.trim();
+
+function copyToken() {
+  navigator.clipboard.writeText(userToken).then(() => ToastManager.show('JWT token copied to clipboard!', 'success'));
+}
+
+function copyResponse() {
+  const t = document.getElementById('api-response').textContent;
+  navigator.clipboard.writeText(t).then(() => ToastManager.show('Response copied!', 'success'));
+}
+
+function copyCurl() {
+  const t = document.getElementById('curl-snippet').textContent;
+  navigator.clipboard.writeText(t).then(() => ToastManager.show('cURL command copied!', 'success'));
+}
+
+function refreshToken() {
+  ToastManager.show('Re-login to get a fresh token. Current token is still valid.', 'info');
+}
+
+function formatJson() {
+  try {
+    const v = JSON.parse(document.getElementById('api-body').value);
+    document.getElementById('api-body').value = JSON.stringify(v, null, 2);
+  } catch(e) {
+    ToastManager.show('Invalid JSON — cannot format.', 'danger');
+  }
+}
+
+function onMethodChange() {
+  const m = document.getElementById('api-method').value;
+  document.getElementById('request-body-container').style.display = (m === 'POST' || m === 'PUT') ? 'block' : 'none';
+  buildCurl();
+}
+
+function setPreset(method, url, body) {
+  document.getElementById('api-method').value = method;
+  document.getElementById('api-url').value = url;
+  const bc = document.getElementById('request-body-container');
+  if (method === 'POST' || method === 'PUT') {
+    bc.style.display = 'block';
+    if (body) {
+      try {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body;
+        document.getElementById('api-body').value = JSON.stringify(parsed, null, 2);
+      } catch(e) {
+        document.getElementById('api-body').value = body || '{}';
+      }
+    } else {
+      document.getElementById('api-body').value = '{}';
+    }
+  } else {
+    bc.style.display = 'none';
+  }
+  buildCurl();
+}
+
+function setAndScroll(method, url, body) {
+  setPreset(method, url, body);
+  document.getElementById('api-console').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function buildCurl() {
+  const method = document.getElementById('api-method').value;
+  const url = document.getElementById('api-url').value;
+  const token = document.getElementById('jwt-token-display').textContent.trim();
+  let curlStr = `curl -X ${method} http://localhost:5000${url} \\\n  -H "Authorization: Bearer ${token.substring(0,40)}..." \\\n  -H "Content-Type: application/json"`;
+  if ((method === 'POST' || method === 'PUT')) {
+    const body = document.getElementById('api-body')?.value?.trim() || '{}';
+    curlStr += ` \\\n  -d '${body.replace(/\n/g, '')}'`;
+  }
+  document.getElementById('curl-snippet').textContent = curlStr;
+  document.getElementById('curl-container').style.display = 'block';
+}
+
+async function executeApiCall() {
+  const method = document.getElementById('api-method').value;
+  const url = document.getElementById('api-url').value.trim();
+  const token = document.getElementById('jwt-token-display').textContent.trim();
+  const btn = document.getElementById('btn-run-api');
+  const resEl = document.getElementById('api-response');
+  const badge = document.getElementById('response-status-badge');
+
+  if (!url) { ToastManager.show('Enter an API endpoint URL', 'warning'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Executing...';
+  resEl.textContent = 'Sending request...';
+  badge.style.display = 'none';
+
+  const options = {
+    method,
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+  };
+
+  if (method === 'POST' || method === 'PUT') {
+    const rawBody = document.getElementById('api-body').value.trim();
+    if (rawBody) {
+      try { JSON.parse(rawBody); options.body = rawBody; }
+      catch(e) {
+        btn.disabled = false; btn.innerHTML = '▶ Send Request';
+        resEl.textContent = `JSON Parse Error: ${e.message}\n\nFix your request body and try again.`;
+        return;
+      }
+    }
+  }
+
+  buildCurl();
+  const t0 = performance.now();
+  try {
+    const res = await fetch(url, options);
+    const ms = Math.round(performance.now() - t0);
+    let data;
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('json')) {
+      data = await res.json();
+    } else {
+      data = { raw_response: await res.text() };
+    }
+
+    badge.style.display = 'inline-block';
+    badge.className = res.ok ? 'badge badge-success' : (res.status < 500 ? 'badge badge-warning' : 'badge badge-danger');
+    badge.textContent = `HTTP ${res.status} ${res.statusText} — ${ms}ms`;
+
+    resEl.textContent = JSON.stringify(data, null, 2);
+    ToastManager.show(`${method} ${url} → ${res.status} (${ms}ms)`, res.ok ? 'success' : 'warning');
+  } catch(err) {
+    badge.style.display = 'inline-block';
+    badge.className = 'badge badge-danger';
+    badge.textContent = 'Network Error';
+    resEl.textContent = `Error: ${err.message}\n\nMake sure the KnowBridge AI server is running on http://localhost:5000`;
+    ToastManager.show(`Request failed: ${err.message}`, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '▶ Send Request';
+  }
+}
+
+document.getElementById('api-url').addEventListener('input', buildCurl);
+document.getElementById('api-method').addEventListener('change', buildCurl);
+buildCurl();
+</script>
+{% endblock %}
+{% endblock %}
