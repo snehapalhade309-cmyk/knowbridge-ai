@@ -33,7 +33,7 @@
 {% endif %}
 
 <!-- Summary Stats -->
-<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem;">
+<div class="stats-grid-5">
   <div class="stat-card"><div class="stat-icon primary"><span data-icon="chart"></span></div><div class="stat-info"><div class="stat-value">{{ decisions|length }}</div><div class="stat-label">Decisions</div></div></div>
   <div class="stat-card"><div class="stat-icon sage"><span data-icon="tasks"></span></div><div class="stat-info"><div class="stat-value">{{ tasks|length }}</div><div class="stat-label">Tasks</div></div></div>
   <div class="stat-card"><div class="stat-icon danger"><span data-icon="shield"></span></div><div class="stat-info"><div class="stat-value">{{ risks|length }}</div><div class="stat-label">Risks</div></div></div>
@@ -41,7 +41,7 @@
   <div class="stat-card"><div class="stat-icon warning"><span data-icon="alert"></span></div><div class="stat-info"><div class="stat-value">{{ issues|length }}</div><div class="stat-label">Issues</div></div></div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;">
+<div class="two-col-grid summary-grid">
   <div>
     {% macro knowledge_section(title, items, cat_badge, icon_name) %}
     {% if items %}

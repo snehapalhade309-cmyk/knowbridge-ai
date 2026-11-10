@@ -53,6 +53,30 @@
           Sign In to KnowBridge AI
         </button>
       </form>
+
+      <!-- Quick Demo Login Info (Visible on Mobile & Desktop) -->
+      <div style="margin-top:1.25rem;padding:.85rem;background:var(--primary-light);border-radius:var(--radius-sm);border:1px solid rgba(166,75,55,.25);font-size:.78rem;">
+        <div style="font-weight:700;color:var(--primary);margin-bottom:.4rem;display:flex;align-items:center;gap:.35rem;">
+          <span>🧪</span> Quick Demo Credentials:
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <button type="button" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.25rem .5rem;" onclick="fillLogin('admin@knowbridge.ai','admin123')">
+            Fill Admin
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.25rem .5rem;" onclick="fillLogin('sarah@knowbridge.ai','sarah123')">
+            Fill PM
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.25rem .5rem;" onclick="fillLogin('alex@knowbridge.ai','alex123')">
+            Fill Member
+          </button>
+        </div>
+      </div>
+      <script>
+      function fillLogin(e, p) {
+        document.querySelector('input[name="email"]').value = e;
+        document.querySelector('input[name="password"]').value = p;
+      }
+      </script>
       <div style="text-align:center;margin-top:1.5rem;font-size:.875rem;color:var(--text-secondary);">
         Don't have an account? <a href="{{ url_for('register') }}" style="font-weight:600;">Create one free</a>
       </div>

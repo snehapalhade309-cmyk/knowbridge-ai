@@ -140,12 +140,15 @@ const Icons = {
     </div>
   </aside>
 
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
   <!-- Main Content -->
   <div class="main-content">
     <!-- Topbar -->
     <header class="topbar">
-      <div style="display:flex;align-items:center;gap:.75rem;">
-        <button class="topbar-btn" id="sidebar-toggle" onclick="toggleSidebar()" style="display:none;">
+      <div style="display:flex;align-items:center;gap:.75rem;min-width:0;">
+        <button class="topbar-btn" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle navigation">
           <span data-icon="menu"></span>
         </button>
         <div class="topbar-title">{% block topbar_title %}KnowBridge AI{% endblock %}</div>

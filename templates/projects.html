@@ -32,7 +32,7 @@
 </div>
 
 {% if projects %}
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;" id="projects-grid">
+<div class="projects-grid" id="projects-grid">
   {% for p in projects %}
   <div class="card card-hover project-card" data-status="{{ p.status }}">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.85rem;">
