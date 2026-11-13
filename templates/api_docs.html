@@ -118,6 +118,7 @@
         <a href="#sec-ack" class="api-nav-link">✍ Acknowledgements (3)</a>
         <a href="#sec-analytics" class="api-nav-link">📊 Analytics (1)</a>
         <a href="#sec-risks" class="api-nav-link">⚠ Risks (1)</a>
+        <a href="#sec-round3" class="api-nav-link" style="color:var(--primary);font-weight:700;">🚀 Round 3 APIs (8)</a>
       </div>
     </div>
     <div class="card" style="margin-top:1rem;padding:.75rem;background:var(--sage-light,#eaf2ef);">
@@ -541,6 +542,77 @@
               <td>Update risk status (open/mitigated/resolved) or severity level</td>
               <td>🔒</td>
               <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('PUT','/api/risks/1','{&quot;status&quot;:&quot;mitigated&quot;,&quot;level&quot;:&quot;low&quot;}')">Test</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Round 3 APIs -->
+    <div class="card" id="sec-round3" style="border-left:4px solid var(--primary);">
+      <div class="card-header">
+        <span class="card-title">🚀 Round 3 APIs — Multimodal, Vector Search & Issue Sync</span>
+        <span class="badge badge-primary">8 Endpoints</span>
+      </div>
+      <div class="table-wrap">
+        <table class="kb-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th><th>Test</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/transcribe/upload</code></td>
+              <td>Upload MP3/MP4/WAV meeting recording & extract decisions, tasks, risks</td>
+              <td>🔒</td>
+              <td><a href="/transcribe" class="btn btn-outline btn-sm">Open UI</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/semantic/index</code></td>
+              <td>Index project knowledge into ChromaDB vector database</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/semantic/index','{&quot;project_id&quot;:1}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/semantic/search</code></td>
+              <td>Natural-language semantic vector search across historical handovers</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/semantic/search','{&quot;query&quot;:&quot;What decisions were made about the database?&quot;,&quot;n_results&quot;:5}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/integrations/github/push-task</code></td>
+              <td>Push pending handover task as a GitHub Issue with knowbridge label</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/integrations/github/push-task','{&quot;task_id&quot;:1}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/integrations/github/push-risk</code></td>
+              <td>Push identified project risk as a labeled GitHub Issue</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/integrations/github/push-risk','{&quot;risk_id&quot;:1}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/integrations/slack/notify</code></td>
+              <td>Dispatch handover report ready alert to Slack channel (#handovers)</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/integrations/slack/notify','{&quot;report_id&quot;:1}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/integrations/slack/notify-task</code></td>
+              <td>Send handover task reminder with priority badge to Slack</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/integrations/slack/notify-task','{&quot;task_id&quot;:1}')">Test</button></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/integrations/jira/push-task</code></td>
+              <td>Create Atlassian Jira Task issue from handover item</td>
+              <td>🔒</td>
+              <td><button class="btn btn-outline btn-sm" onclick="setAndScroll('POST','/api/integrations/jira/push-task','{&quot;task_id&quot;:1}')">Test</button></td>
             </tr>
           </tbody>
         </table>
