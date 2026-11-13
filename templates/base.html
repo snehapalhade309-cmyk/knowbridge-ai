@@ -109,7 +109,7 @@ const Icons = {
         </li>
         {% endif %}
         {% if current_user.is_authenticated %}
-        <li class="nav-item nav-section-label mt-2"><small class="text-muted px-2">Round 3 Features</small></li>
+        <li class="nav-item nav-section-label mt-2"><small class="text-muted px-2">Intelligence & Sync</small></li>
         <li class="nav-item">
           <a href="{{ url_for('imp.transcribe_page') }}" class="nav-link {% if request.endpoint=='imp.transcribe_page' %}active{% endif %}">
             <span class="nav-icon" data-icon="mic"></span> Audio Transcription
