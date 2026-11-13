@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Semantic Search — KnowBridge AI{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h1 class="page-title"><i data-lucide="search" class="me-2"></i>Semantic Knowledge Search</h1>
+    <p class="text-muted mb-0">Ask natural-language questions across all project handovers — powered by vector search.</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if current_user.role in ['admin','project_manager'] %}
+    <button class="btn btn-outline-primary btn-sm" onclick="indexKnowledge()">
+      <i data-lucide="database" class="me-1"></i>Index Knowledge Base
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f5e9;"><i data-lucide="database" style="color:#2e7d32;"></i></div>
+      <div>
+        <div class="stat-value">{{ chroma_count }}</div>
+        <div class="stat-label">Indexed Items</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:{% if chroma_ok %}#e8f5e9{% else %}#fce4e4{% endif %};">
+        <i data-lucide="{% if chroma_ok %}check-circle{% else %}alert-circle{% endif %}" style="color:{% if chroma_ok %}#2e7d32{% else %}#c62828{% endif %};"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="font-size:1rem;">{% if chroma_ok %}Ready{% else %}Unavailable{% endif %}</div>
+        <div class="stat-label">Vector DB</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e3f2fd;"><i data-lucide="cpu" style="color:#1565c0;"></i></div>
+      <div>
+        <div class="stat-value" style="font-size:1rem;">Gemini + ChromaDB</div>
+        <div class="stat-label">AI Engine</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if not chroma_ok %}
+<div class="alert alert-warning mb-4">
+  <i data-lucide="alert-triangle" class="me-2"></i>
+  Vector database unavailable: {{ chroma_err }}. Install chromadb: <code>pip install chromadb</code>
+</div>
+{% endif %}
+
+<!-- Search Box -->
+<div class="card mb-4">
+  <div class="card-body p-4">
+    <h5 class="fw-bold mb-3"><i data-lucide="search" class="me-2 text-terra"></i>Ask a Question</h5>
+    <div class="row g-3 mb-3">
+      <div class="col-md-7">
+        <input type="text" id="searchQuery" class="form-control form-control-lg"
+               placeholder="e.g. What decisions were made about the database architecture?"
+               onkeydown="if(event.key==='Enter')doSearch()">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-lg" id="searchProject">
+          <option value="">All Projects</option>
+          {% for p in projects %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary btn-lg w-100" onclick="doSearch()">
+          <i data-lucide="search" class="me-1"></i>Search
+        </button>
+      </div>
+    </div>
+
+    <!-- Example queries -->
+    <div class="d-flex flex-wrap gap-2">
+      <span class="text-muted small me-1">Try:</span>
+      {% for q in [
+        'What are the pending tasks?',
+        'What risks were identified?',
+        'Who is responsible for deployment?',
+        'What decisions were made about the database?',
+        'What are the unresolved issues?'
+      ] %}
+      <button class="btn btn-sm" style="background:var(--sage-light);border:1px solid var(--border);font-size:.78rem;"
+              onclick="document.getElementById('searchQuery').value='{{ q }}';doSearch()">{{ q }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Results -->
+<div id="searchLoading" class="d-none text-center py-4">
+  <div class="spinner-border text-terra mb-2" role="status"></div>
+  <p class="text-muted">Searching knowledge base…</p>
+</div>
+
+<div id="searchResults"></div>
+
+<div id="searchEmpty" class="card">
+  <div class="card-body d-flex flex-column align-items-center justify-content-center py-5 text-center">
+    <i data-lucide="search" style="width:52px;height:52px;color:var(--border);" class="mb-3"></i>
+    <h5 class="text-muted">Ask a question to search</h5>
+    <p class="text-muted small">The semantic search engine looks across all indexed project knowledge — decisions, tasks, risks, discussions and more.</p>
+    {% if chroma_count == 0 and current_user.role in ['admin','project_manager'] %}
+    <button class="btn btn-primary mt-2" onclick="indexKnowledge()">
+      <i data-lucide="database" class="me-1"></i>Index Knowledge Base Now
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Index modal -->
+<div class="modal fade" id="indexModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i data-lucide="database" class="me-2 text-terra"></i>Index Knowledge Base</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Select a project to index its approved knowledge, or index all projects at once.</p>
+        <select class="form-select mb-3" id="indexProject">
+          <option value="">All Projects</option>
+          {% for p in projects %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+        <div id="indexProgress" class="d-none">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="spinner-border spinner-border-sm text-terra"></div>
+            <span class="small">Indexing knowledge into vector database…</span>
+          </div>
+        </div>
+        <div id="indexResult" class="d-none alert alert-success p-2 small"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="runIndex()">
+          <i data-lucide="database" class="me-1"></i>Start Indexing
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.result-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;transition:box-shadow .2s;}
+.result-card:hover{box-shadow:0 4px 16px rgba(166,75,55,.1);}
+.similarity-bar{height:6px;border-radius:3px;background:var(--sage-light);}
+.similarity-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--terra),#e57368);}
+.cat-pill{font-size:.7rem;padding:3px 10px;border-radius:20px;font-weight:700;text-transform:uppercase;}
+</style>
+
+<script>
+const catColors={decision:'#2196f3',task:'#ff9800',risk:'#f44336',context:'#4caf50',discussion:'#9c27b0',dependency:'#607d8b'};
+
+function doSearch(){
+  const q=document.getElementById('searchQuery').value.trim();
+  if(!q){showToast('Please enter a search query','warning');return;}
+  document.getElementById('searchEmpty').classList.add('d-none');
+  document.getElementById('searchResults').innerHTML='';
+  document.getElementById('searchLoading').classList.remove('d-none');
+
+  fetch('/api/semantic/search',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken': getCSRFToken()},
+    body:JSON.stringify({query:q,project_id:document.getElementById('searchProject').value||null,n_results:8})
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    document.getElementById('searchLoading').classList.add('d-none');
+    if(data.error){showToast('Search error: '+data.error,'danger');document.getElementById('searchEmpty').classList.remove('d-none');return;}
+    renderSearchResults(data);
+  })
+  .catch(e=>{document.getElementById('searchLoading').classList.add('d-none');showToast('Error: '+e,'danger');});
+}
+
+function renderSearchResults(data){
+  const container=document.getElementById('searchResults');
+  if(!data.results||!data.results.length){
+    container.innerHTML=`<div class="alert alert-info"><i data-lucide="info" class="me-2"></i>No matching knowledge found for "<strong>${data.query}</strong>". Try indexing more projects or rephrasing your query.</div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  container.innerHTML=`<p class="text-muted small mb-3"><i data-lucide="check-circle" style="width:14px;height:14px;" class="me-1 text-success"></i>Found <strong>${data.results.length}</strong> relevant items for "<em>${data.query}</em>"</p>`;
+
+  data.results.forEach((r,i)=>{
+    const col=catColors[r.category]||'#888';
+    container.innerHTML+=`
+    <div class="result-card">
+      <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+        <span class="cat-pill" style="background:${col}20;color:${col};">${r.category}</span>
+        <span class="small text-muted">${r.similarity}% match</span>
+      </div>
+      <p class="mb-2 fw-semibold">${r.content}</p>
+      <div class="similarity-bar mb-2"><div class="similarity-fill" style="width:${r.similarity}%"></div></div>
+      <div class="d-flex flex-wrap gap-3">
+        ${r.source_doc?`<small class="text-muted"><i data-lucide="file" style="width:12px;height:12px;" class="me-1"></i>${r.source_doc}</small>`:''}
+        ${r.source_ref?`<small class="text-muted"><i data-lucide="bookmark" style="width:12px;height:12px;" class="me-1"></i>${r.source_ref}</small>`:''}
+        <small class="text-muted ms-auto"><i data-lucide="shield" style="width:12px;height:12px;" class="me-1"></i>${r.confidence} confidence</small>
+      </div>
+    </div>`;
+  });
+  lucide.createIcons();
+}
+
+function indexKnowledge(){
+  document.getElementById('indexResult').classList.add('d-none');
+  document.getElementById('indexProgress').classList.add('d-none');
+  new bootstrap.Modal(document.getElementById('indexModal')).show();
+}
+
+function runIndex(){
+  document.getElementById('indexProgress').classList.remove('d-none');
+  document.getElementById('indexResult').classList.add('d-none');
+  const pid=document.getElementById('indexProject').value;
+  fetch('/api/semantic/index',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()},
+    body:JSON.stringify({project_id:pid||null})
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    document.getElementById('indexProgress').classList.add('d-none');
+    const res=document.getElementById('indexResult');
+    res.classList.remove('d-none');
+    if(data.error){res.className='alert alert-danger p-2 small';res.textContent='Error: '+data.error;}
+    else{res.className='alert alert-success p-2 small';res.textContent=data.message;}
+  })
+  .catch(e=>{document.getElementById('indexProgress').classList.add('d-none');showToast('Error: '+e,'danger');});
+}
+
+function getCSRFToken(){
+  const m=document.cookie.match(/csrf_token=([^;]+)/);
+  return m?decodeURIComponent(m[1]):'';
+}
+</script>
+{% endblock %}

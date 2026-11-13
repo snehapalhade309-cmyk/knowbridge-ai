@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}Audio/Video Transcription — KnowBridge AI{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h1 class="page-title"><i data-lucide="mic" class="me-2"></i>Exit-Interview Transcription</h1>
+    <p class="text-muted mb-0">Upload MP3/MP4/WAV exit interviews — AI extracts decisions, tasks and risks automatically.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Upload Card -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i data-lucide="upload-cloud" class="me-2 text-terra"></i>Upload Recording</h5>
+
+        <div id="audio-dropzone" class="upload-dropzone mb-3" onclick="document.getElementById('audioFile').click()">
+          <div class="text-center py-3">
+            <i data-lucide="file-audio" style="width:40px;height:40px;color:var(--terra);" class="mb-2"></i>
+            <p class="mb-1 fw-semibold">Drag & drop or click to upload</p>
+            <p class="text-muted small mb-0">MP3, MP4, WAV, OGG, M4A, WEBM (max 100 MB)</p>
+          </div>
+          <input type="file" id="audioFile" accept=".mp3,.mp4,.wav,.ogg,.m4a,.webm,.flac" class="d-none">
+        </div>
+
+        <div id="audioFileInfo" class="d-none mb-3 p-2 rounded" style="background:var(--sage-light);border:1px solid var(--border);">
+          <div class="d-flex align-items-center gap-2">
+            <i data-lucide="file-check" style="width:18px;height:18px;color:var(--success-green);"></i>
+            <span id="audioFileName" class="small fw-semibold"></span>
+            <span id="audioFileSize" class="small text-muted ms-auto"></span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Project</label>
+          <select class="form-select" id="transcribeProject">
+            <option value="">— No project (save globally) —</option>
+            {% for p in projects %}
+            <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Interview Type</label>
+          <select class="form-select" id="interviewType">
+            <option value="exit_interview">Exit Interview</option>
+            <option value="handover_meeting">Handover Meeting</option>
+            <option value="knowledge_transfer">Knowledge Transfer Session</option>
+            <option value="project_retrospective">Project Retrospective</option>
+            <option value="team_meeting">General Team Meeting</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary w-100" id="transcribeBtn" onclick="startTranscription()">
+          <i data-lucide="cpu" class="me-2"></i>Transcribe & Extract Knowledge
+        </button>
+
+        <div id="transcribeProgress" class="d-none mt-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="spinner-border spinner-border-sm text-terra" role="status"></div>
+            <span id="progressText" class="small fw-semibold">Uploading and analysing with Gemini AI…</span>
+          </div>
+          <div class="progress" style="height:6px;">
+            <div class="progress-bar bg-terra progress-bar-striped progress-bar-animated" style="width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <div class="card mt-3">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3">How it works</h6>
+        <div class="d-flex gap-2 mb-2">
+          <span class="badge" style="background:var(--terra);min-width:22px;">1</span>
+          <span class="small">Upload your Zoom/Meet/Teams recording</span>
+        </div>
+        <div class="d-flex gap-2 mb-2">
+          <span class="badge" style="background:var(--terra);min-width:22px;">2</span>
+          <span class="small">Gemini multimodal AI transcribes the audio</span>
+        </div>
+        <div class="d-flex gap-2 mb-2">
+          <span class="badge" style="background:var(--terra);min-width:22px;">3</span>
+          <span class="small">Decisions, tasks and risks are extracted</span>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge" style="background:var(--terra);min-width:22px;">4</span>
+          <span class="small">Items go to Human Review queue before finalising</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Panel -->
+  <div class="col-lg-7">
+    <div id="resultsPanel" class="d-none">
+      <!-- Transcript Summary -->
+      <div class="card mb-3">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="fw-bold mb-0"><i data-lucide="file-text" class="me-2 text-terra"></i>Transcript Summary</h5>
+            <span id="methodBadge" class="badge"></span>
+          </div>
+          <p id="transcriptSummary" class="mb-0 text-muted small"></p>
+          <div class="mt-2">
+            <small class="text-muted"><i data-lucide="clock" style="width:13px;height:13px;" class="me-1"></i>Duration: <span id="durationEstimate">—</span></small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Extracted Items -->
+      <div class="card mb-3">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold mb-0"><i data-lucide="layers" class="me-2 text-terra"></i>Extracted Knowledge Items</h5>
+            <span id="itemCountBadge" class="badge bg-terra"></span>
+          </div>
+          <div id="knowledgeItems"></div>
+          <div id="savedNotice" class="d-none mt-3 alert alert-success p-2">
+            <i data-lucide="check-circle" class="me-2"></i>Items saved to Human Review queue for the selected project.
+          </div>
+        </div>
+      </div>
+
+      <!-- Follow-ups -->
+      <div class="card" id="followupsCard">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-3"><i data-lucide="lightbulb" class="me-2 text-terra"></i>Recommended Follow-ups</h6>
+          <ul id="followupsList" class="mb-0"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="card h-100">
+      <div class="card-body d-flex flex-column align-items-center justify-content-center py-5 text-center">
+        <i data-lucide="mic-off" style="width:56px;height:56px;color:var(--border);" class="mb-3"></i>
+        <h5 class="text-muted">No recording uploaded yet</h5>
+        <p class="text-muted small">Upload an audio or video recording to extract knowledge automatically.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.upload-dropzone{border:2px dashed var(--border);border-radius:12px;cursor:pointer;transition:border-color .2s,background .2s;background:var(--ivory);}
+.upload-dropzone:hover,.upload-dropzone.drag-over{border-color:var(--terra);background:var(--sage-light);}
+.ki-card{border-left:4px solid var(--terra);background:var(--sage-light);border-radius:8px;padding:12px 14px;margin-bottom:10px;}
+.ki-card.decision{border-left-color:#2196f3;}
+.ki-card.task{border-left-color:#ff9800;}
+.ki-card.risk{border-left-color:#f44336;}
+.ki-card.context{border-left-color:#4caf50;}
+.ki-card.discussion{border-left-color:#9c27b0;}
+.ki-cat-badge{font-size:0.7rem;padding:2px 8px;border-radius:20px;text-transform:uppercase;font-weight:700;}
+</style>
+
+<script>
+const catColors={decision:'#2196f3',task:'#ff9800',risk:'#f44336',context:'#4caf50',discussion:'#9c27b0',dependency:'#607d8b'};
+
+// Drag & drop
+const dz=document.getElementById('audio-dropzone');
+const fi=document.getElementById('audioFile');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('drag-over');
+  if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);
+});
+fi.addEventListener('change',()=>{if(fi.files[0])setFile(fi.files[0]);});
+
+function setFile(file){
+  document.getElementById('audioFileName').textContent=file.name;
+  document.getElementById('audioFileSize').textContent=(file.size/1024/1024).toFixed(1)+' MB';
+  document.getElementById('audioFileInfo').classList.remove('d-none');
+  window._audioFile=file;
+}
+
+function startTranscription(){
+  if(!window._audioFile){showToast('Please select an audio or video file first.','warning');return;}
+  const btn=document.getElementById('transcribeBtn');
+  const prog=document.getElementById('transcribeProgress');
+  btn.disabled=true;
+  prog.classList.remove('d-none');
+  document.getElementById('emptyState').classList.remove('d-none');
+  document.getElementById('resultsPanel').classList.add('d-none');
+
+  const steps=['Uploading file…','Sending to Gemini AI…','Transcribing audio…','Extracting knowledge…','Structuring results…'];
+  let si=0;
+  const interval=setInterval(()=>{
+    document.getElementById('progressText').textContent=steps[si%steps.length];
+    si++;
+  },2200);
+
+  const fd=new FormData();
+  fd.append('file',window._audioFile);
+  fd.append('project_id',document.getElementById('transcribeProject').value);
+  fd.append('interview_type',document.getElementById('interviewType').value);
+
+  fetch('/api/transcribe/upload',{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(data=>{
+      clearInterval(interval);
+      btn.disabled=false;
+      prog.classList.add('d-none');
+      if(data.error){showToast('Error: '+data.error,'danger');return;}
+      renderResults(data);
+    })
+    .catch(err=>{
+      clearInterval(interval);
+      btn.disabled=false;
+      prog.classList.add('d-none');
+      showToast('Network error: '+err,'danger');
+    });
+}
+
+function renderResults(data){
+  document.getElementById('emptyState').classList.add('d-none');
+  document.getElementById('resultsPanel').classList.remove('d-none');
+  document.getElementById('transcriptSummary').textContent=data.transcript_summary||'No summary available.';
+  document.getElementById('durationEstimate').textContent=data.duration_estimate||'Unknown';
+
+  const mb=document.getElementById('methodBadge');
+  if(data.method==='gemini_multimodal'){mb.textContent='Gemini AI';mb.className='badge bg-terra';}
+  else{mb.textContent='Fallback Mode';mb.className='badge bg-secondary';}
+
+  const items=data.knowledge_items||[];
+  document.getElementById('itemCountBadge').textContent=items.length+' items';
+  const container=document.getElementById('knowledgeItems');
+  container.innerHTML='';
+  if(!items.length){container.innerHTML='<p class="text-muted small">No knowledge items extracted.</p>';return;}
+  items.forEach(item=>{
+    const col=catColors[item.category]||'#888';
+    container.innerHTML+=`
+      <div class="ki-card ${item.category}">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="ki-cat-badge" style="background:${col}20;color:${col};">${item.category}</span>
+          <span class="ms-auto badge" style="background:${item.confidence==='high'?'#4caf5020':'#ff980020'};color:${item.confidence==='high'?'#2e7d32':'#e65100'};">${item.confidence||'medium'}</span>
+        </div>
+        <p class="mb-1 fw-semibold small">${item.content}</p>
+        ${item.owner&&item.owner!=='Unknown'?`<small class="text-muted">👤 ${item.owner}</small>`:''}
+        ${item.deadline&&item.deadline!=='Not specified'?`<small class="text-muted ms-2">📅 ${item.deadline}</small>`:''}
+      </div>`;
+  });
+
+  const projectId=document.getElementById('transcribeProject').value;
+  if(projectId&&items.length)document.getElementById('savedNotice').classList.remove('d-none');
+
+  const followups=data.recommended_followups||[];
+  const fuList=document.getElementById('followupsList');
+  fuList.innerHTML='';
+  followups.forEach(f=>{fuList.innerHTML+=`<li class="small mb-1">${f}</li>`;});
+  document.getElementById('followupsCard').style.display=followups.length?'':'none';
+
+  lucide.createIcons();
+}
+</script>
+{% endblock %}

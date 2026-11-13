@@ -107,9 +107,20 @@
             {% endif %}
           </td>
           <td data-label="Actions">
-            <button class="btn btn-outline btn-sm" onclick="quickEditTask({{ t.id }}, '{{ t.title|e }}', '{{ t.assignee or '' }}', '{{ t.status }}')">
-              <span data-icon="edit"></span> Edit
-            </button>
+            <div class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-outline btn-sm" onclick="quickEditTask({{ t.id }}, '{{ t.title|e }}', '{{ t.assignee or '' }}', '{{ t.status }}')">
+                <span data-icon="edit"></span> Edit
+              </button>
+              <button class="btn btn-sm" style="background:#f0f6ff;border:1px solid #c5d9f1;color:#1a5fa8;" title="Push to GitHub" onclick="pushToGitHub({{ t.id }})">
+                <i data-lucide="github" style="width:13px;height:13px;"></i>
+              </button>
+              <button class="btn btn-sm" style="background:#f5f0ff;border:1px solid #c9b8f0;color:#611f69;" title="Notify on Slack" onclick="pushToSlack({{ t.id }})">
+                <i data-lucide="message-square" style="width:13px;height:13px;"></i>
+              </button>
+              <button class="btn btn-sm" style="background:#e3f2fd;border:1px solid #90caf9;color:#0052cc;" title="Create Jira Issue" onclick="pushToJira({{ t.id }})">
+                <i data-lucide="layout" style="width:13px;height:13px;"></i>
+              </button>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -256,6 +267,54 @@ function quickEditTask(id, title, assignee, status) {
         }
       });
   }
+}
+
+function getCSRFToken(){const m=document.cookie.match(/csrf_token=([^;]+)/);return m?decodeURIComponent(m[1]):'';}
+
+function pushToGitHub(taskId){
+  if(!confirm('Push this task as a GitHub Issue?'))return;
+  fetch('/api/integrations/github/push-task',{
+    method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()},
+    body:JSON.stringify({task_id:taskId})
+  }).then(r=>r.json()).then(d=>{
+    if(d.success){
+      ToastManager.show(`GitHub Issue #${d.issue_number} created! <a href="${d.issue_url}" target="_blank">View Issue</a>`,'success');
+    } else {
+      if(d.error&&d.error.includes('not configured')){
+        ToastManager.show('GitHub not configured. <a href="/integrations">Go to Integrations →</a>','warning');
+      } else {
+        ToastManager.show('GitHub Error: '+d.error,'danger');
+      }
+    }
+  });
+}
+
+function pushToSlack(taskId){
+  fetch('/api/integrations/slack/notify-task',{
+    method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()},
+    body:JSON.stringify({task_id:taskId})
+  }).then(r=>r.json()).then(d=>{
+    if(d.success)ToastManager.show('Task notification sent to Slack!','success');
+    else if(d.error&&d.error.includes('not configured'))
+      ToastManager.show('Slack not configured. <a href="/integrations">Go to Integrations →</a>','warning');
+    else ToastManager.show('Slack Error: '+d.error,'danger');
+  });
+}
+
+function pushToJira(taskId){
+  if(!confirm('Create a Jira issue from this task?'))return;
+  fetch('/api/integrations/jira/push-task',{
+    method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()},
+    body:JSON.stringify({task_id:taskId})
+  }).then(r=>r.json()).then(d=>{
+    if(d.success){
+      ToastManager.show(`Jira issue ${d.issue_key} created! <a href="${d.issue_url}" target="_blank">View Issue</a>`,'success');
+    } else {
+      if(d.error&&d.error.includes('not configured'))
+        ToastManager.show('Jira not configured. <a href="/integrations">Go to Integrations →</a>','warning');
+      else ToastManager.show('Jira Error: '+d.error,'danger');
+    }
+  });
 }
 </script>
 {% endblock %}

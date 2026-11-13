@@ -105,6 +105,22 @@ const Icons = {
         </li>
         {% endif %}
         {% if current_user.is_authenticated %}
+        <li class="nav-item nav-section-label mt-2"><small class="text-muted px-2">Round 3 Features</small></li>
+        <li class="nav-item">
+          <a href="{{ url_for('imp.transcribe_page') }}" class="nav-link {% if request.endpoint=='imp.transcribe_page' %}active{% endif %}">
+            <span class="nav-icon" data-icon="mic"></span> Audio Transcription
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('imp.semantic_search_page') }}" class="nav-link {% if request.endpoint=='imp.semantic_search_page' %}active{% endif %}">
+            <span class="nav-icon" data-icon="search"></span> Semantic Search
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('imp.integrations_page') }}" class="nav-link {% if request.endpoint=='imp.integrations_page' %}active{% endif %}">
+            <span class="nav-icon" data-icon="plug"></span> Integrations
+          </a>
+        </li>
         <li class="nav-item">
           <a href="{{ url_for('api_docs_page') }}" class="nav-link {% if request.endpoint=='api_docs_page' %}active{% endif %}">
             <span class="nav-icon" data-icon="code"></span> REST APIs

@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block title %}Integrations — KnowBridge AI{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h1 class="page-title"><i data-lucide="plug" class="me-2"></i>Integrations</h1>
+    <p class="text-muted mb-0">Connect KnowBridge AI with GitHub, Slack and Jira for seamless handover sync.</p>
+  </div>
+</div>
+
+{% if current_user.role != 'admin' %}
+<div class="alert alert-warning"><i data-lucide="shield" class="me-2"></i>Only Admins can configure integration credentials. Contact your administrator.</div>
+{% endif %}
+
+<!-- Integration Cards -->
+<div class="row g-4">
+  <!-- GITHUB -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="stat-icon" style="background:#f0f0f0;"><i data-lucide="github" style="color:#333;"></i></div>
+          <div>
+            <h5 class="fw-bold mb-0">GitHub</h5>
+            <small class="text-muted">Push tasks and risks as Issues</small>
+          </div>
+          <span id="github-status" class="badge ms-auto bg-secondary">Not tested</span>
+        </div>
+
+        {% if current_user.role == 'admin' %}
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Personal Access Token</label>
+          <div class="input-group">
+            <input type="password" class="form-control form-control-sm" id="GITHUB_TOKEN" placeholder="ghp_xxxxxxxxxxxx">
+            <button class="btn btn-outline-secondary btn-sm" onclick="toggleVis('GITHUB_TOKEN',this)"><i data-lucide="eye" style="width:14px;height:14px;"></i></button>
+          </div>
+          <small class="text-muted">GitHub → Settings → Developer settings → Personal access tokens</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Repository (owner/repo)</label>
+          <input type="text" class="form-control form-control-sm" id="GITHUB_REPO" placeholder="yourname/your-repo">
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="testIntegration('github')">
+            <i data-lucide="wifi" class="me-1"></i>Test
+          </button>
+          <button class="btn btn-primary btn-sm flex-fill" onclick="saveAll()">
+            <i data-lucide="save" class="me-1"></i>Save
+          </button>
+        </div>
+        {% endif %}
+
+        <hr class="my-3">
+        <h6 class="fw-bold small mb-2">Capabilities</h6>
+        <ul class="mb-0 small">
+          <li>Push pending tasks as GitHub Issues with one click</li>
+          <li>Push identified risks with severity labels</li>
+          <li>Auto-label issues as <code>knowbridge-handover</code></li>
+          <li>Issue URL saved back to the task record</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLACK -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="stat-icon" style="background:#f5f0ff;"><i data-lucide="message-square" style="color:#611f69;"></i></div>
+          <div>
+            <h5 class="fw-bold mb-0">Slack</h5>
+            <small class="text-muted">Send handover notifications</small>
+          </div>
+          <span id="slack-status" class="badge ms-auto bg-secondary">Not tested</span>
+        </div>
+
+        {% if current_user.role == 'admin' %}
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Bot Token</label>
+          <div class="input-group">
+            <input type="password" class="form-control form-control-sm" id="SLACK_BOT_TOKEN" placeholder="xoxb-xxxxxxxxxxxx">
+            <button class="btn btn-outline-secondary btn-sm" onclick="toggleVis('SLACK_BOT_TOKEN',this)"><i data-lucide="eye" style="width:14px;height:14px;"></i></button>
+          </div>
+          <small class="text-muted">Slack API → Your Apps → OAuth & Permissions → Bot User OAuth Token</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Default Channel</label>
+          <input type="text" class="form-control form-control-sm" id="SLACK_CHANNEL" placeholder="#handovers">
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="testIntegration('slack')">
+            <i data-lucide="wifi" class="me-1"></i>Test
+          </button>
+          <button class="btn btn-primary btn-sm flex-fill" onclick="saveAll()">
+            <i data-lucide="save" class="me-1"></i>Save
+          </button>
+        </div>
+        {% endif %}
+
+        <hr class="my-3">
+        <h6 class="fw-bold small mb-2">Capabilities</h6>
+        <ul class="mb-0 small">
+          <li>Notify team when a handover report is ready</li>
+          <li>Send task reminders with priority emojis</li>
+          <li>Handover sign-off requests in Slack</li>
+          <li>Configurable target channel</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- JIRA -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="stat-icon" style="background:#e3f2fd;"><i data-lucide="layout" style="color:#0052cc;"></i></div>
+          <div>
+            <h5 class="fw-bold mb-0">Jira</h5>
+            <small class="text-muted">Create issues from handover tasks</small>
+          </div>
+          <span id="jira-status" class="badge ms-auto bg-secondary">Not tested</span>
+        </div>
+
+        {% if current_user.role == 'admin' %}
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Jira URL</label>
+          <input type="text" class="form-control form-control-sm" id="JIRA_URL" placeholder="https://your-domain.atlassian.net">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Email</label>
+          <input type="email" class="form-control form-control-sm" id="JIRA_EMAIL" placeholder="you@company.com">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">API Token</label>
+          <div class="input-group">
+            <input type="password" class="form-control form-control-sm" id="JIRA_API_TOKEN" placeholder="Your Jira API token">
+            <button class="btn btn-outline-secondary btn-sm" onclick="toggleVis('JIRA_API_TOKEN',this)"><i data-lucide="eye" style="width:14px;height:14px;"></i></button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Project Key</label>
+          <input type="text" class="form-control form-control-sm" id="JIRA_PROJECT_KEY" placeholder="KAN">
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="testIntegration('jira')">
+            <i data-lucide="wifi" class="me-1"></i>Test
+          </button>
+          <button class="btn btn-primary btn-sm flex-fill" onclick="saveAll()">
+            <i data-lucide="save" class="me-1"></i>Save
+          </button>
+        </div>
+        {% endif %}
+
+        <hr class="my-3">
+        <h6 class="fw-bold small mb-2">Capabilities</h6>
+        <ul class="mb-0 small">
+          <li>Create Jira tasks from handover pending items</li>
+          <li>Priority (High/Medium/Low) mapping</li>
+          <li>Jira issue key saved back to task record</li>
+          <li>Full description with assignee and deadline</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- How to get API keys guide -->
+<div class="card mt-4">
+  <div class="card-body p-4">
+    <h5 class="fw-bold mb-3"><i data-lucide="key" class="me-2 text-terra"></i>How to Get API Keys</h5>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <h6 class="fw-bold">GitHub Token</h6>
+        <ol class="small mb-0">
+          <li>Go to <strong>github.com → Settings</strong></li>
+          <li>Click <strong>Developer settings</strong></li>
+          <li>Select <strong>Personal access tokens → Tokens (classic)</strong></li>
+          <li>Generate new token with <code>repo</code> scope</li>
+          <li>Copy and paste the token above</li>
+        </ol>
+      </div>
+      <div class="col-md-4">
+        <h6 class="fw-bold">Slack Bot Token</h6>
+        <ol class="small mb-0">
+          <li>Go to <strong>api.slack.com/apps</strong></li>
+          <li>Create a new app → <strong>From scratch</strong></li>
+          <li>Add OAuth scopes: <code>chat:write</code>, <code>channels:read</code></li>
+          <li>Install app to your workspace</li>
+          <li>Copy the <strong>Bot User OAuth Token</strong> (starts with <code>xoxb-</code>)</li>
+        </ol>
+      </div>
+      <div class="col-md-4">
+        <h6 class="fw-bold">Jira API Token</h6>
+        <ol class="small mb-0">
+          <li>Go to <strong>id.atlassian.com/manage-profile/security</strong></li>
+          <li>Click <strong>Create and manage API tokens</strong></li>
+          <li>Click <strong>Create API token</strong></li>
+          <li>Name it "KnowBridge AI" and copy</li>
+          <li>Use your Atlassian email + this token above</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Load saved (non-secret) settings
+fetch('/api/integrations/get-settings')
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.error)return;
+    ['GITHUB_REPO','SLACK_CHANNEL','JIRA_URL','JIRA_EMAIL','JIRA_PROJECT_KEY'].forEach(k=>{
+      const el=document.getElementById(k);
+      if(el&&data[k])el.value=data[k];
+    });
+  }).catch(()=>{});
+
+function toggleVis(id, btn){
+  const el=document.getElementById(id);
+  if(el.type==='password'){el.type='text';btn.innerHTML='<i data-lucide="eye-off" style="width:14px;height:14px;"></i>';}
+  else{el.type='password';btn.innerHTML='<i data-lucide="eye" style="width:14px;height:14px;"></i>';}
+  lucide.createIcons();
+}
+
+function saveAll(){
+  const payload={};
+  ['GITHUB_TOKEN','GITHUB_REPO','SLACK_BOT_TOKEN','SLACK_CHANNEL','JIRA_URL','JIRA_EMAIL','JIRA_API_TOKEN','JIRA_PROJECT_KEY'].forEach(k=>{
+    const el=document.getElementById(k);
+    if(el)payload[k]=el.value||'';
+  });
+  fetch('/api/integrations/save-settings',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+    body:JSON.stringify(payload)
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.success)showToast('Integration settings saved successfully!','success');
+    else showToast('Error: '+data.error,'danger');
+  });
+}
+
+function testIntegration(type){
+  const badge=document.getElementById(type+'-status');
+  badge.textContent='Testing…';badge.className='badge ms-auto bg-warning text-dark';
+  fetch('/api/integrations/test/'+type,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+    body:JSON.stringify({})
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.ok){
+      badge.textContent='Connected ✓';badge.className='badge ms-auto bg-success';
+      showToast(`${type.charAt(0).toUpperCase()+type.slice(1)} connected as ${data.user||data.name||'—'}!`,'success');
+    } else {
+      badge.textContent='Failed';badge.className='badge ms-auto bg-danger';
+      showToast(`${type} error: ${data.error}`,'danger');
+    }
+  })
+  .catch(e=>{badge.textContent='Error';badge.className='badge ms-auto bg-danger';showToast('Network error','danger');});
+}
+
+function getCsrf(){
+  const m=document.cookie.match(/csrf_token=([^;]+)/);
+  return m?decodeURIComponent(m[1]):'';
+}
+</script>
+{% endblock %}

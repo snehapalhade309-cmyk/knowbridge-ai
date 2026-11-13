@@ -17,6 +17,9 @@ from flask_jwt_extended import JWTManager, create_access_token, decode_token
 
 load_dotenv()
 
+# ─── Round 3 Improvements Blueprint ──────────────────────────────────────────
+# (imported after db/models are defined — see bottom of file)
+
 # ─── App Setup ────────────────────────────────────────────────────────────────
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-change-me')
@@ -24,7 +27,7 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'knowbridge-ai-enterp
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///knowbridge.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16777216))
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 104857600))  # 100 MB for audio/video
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt', 'csv'}
@@ -2772,6 +2775,15 @@ def create_demo_data():
 with app.app_context():
     db.create_all()
     create_demo_data()
+
+# ─── Register Round-3 Improvements Blueprint ─────────────────────────────────
+try:
+    from improvements import imp as improvements_bp
+    csrf.exempt(improvements_bp)
+    app.register_blueprint(improvements_bp)
+    logger.info("[OK] Round-3 improvements blueprint registered.")
+except Exception as _imp_err:
+    logger.warning(f"[WARN] Could not load improvements blueprint: {_imp_err}")
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
