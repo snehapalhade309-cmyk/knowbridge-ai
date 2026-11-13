@@ -20,3 +20,6 @@ reports/*
 # Operating system artifacts
 .DS_Store
 Thumbs.db
+
+# Vector database storage (auto-seeded dynamically on app boot)
+chroma_db/

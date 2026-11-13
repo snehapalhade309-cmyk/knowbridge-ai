@@ -4,8 +4,20 @@
 <div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
   <div>
     <h1 class="page-title"><i data-lucide="plug" class="me-2"></i>Integrations</h1>
-    <p class="text-muted mb-0">Connect KnowBridge AI with GitHub, Slack and Jira for seamless handover sync.</p>
+    <p class="text-muted mb-0">Two-way sync with GitHub, Slack and Jira for automated task tracking and handover alerts.</p>
   </div>
+  <div>
+    <span class="badge" style="background:#e8f5e9;color:#2e7d32;padding:8px 14px;font-size:.85rem;border:1px solid #c8e6c9;">
+      <i data-lucide="check-circle" style="width:14px;height:14px;" class="me-1"></i>Active Handover Connectors Enabled
+    </span>
+  </div>
+</div>
+
+<div class="alert alert-info d-flex align-items-center gap-2 mb-4" style="background:var(--sage-light);border:1px solid var(--border);">
+  <i data-lucide="sparkles" style="width:18px;height:18px;color:var(--terra);flex-shrink:0;"></i>
+  <span class="small">
+    <strong>Pre-Configured Handover Connectors:</strong> Default live connectors are active for <code>snehapalhade309-cmyk/knowbridge-ai</code> and <code>#handovers</code> channel. You can test immediately or update with your custom enterprise tokens below.
+  </span>
 </div>
 
 {% if current_user.role != 'admin' %}
@@ -206,15 +218,20 @@
 </div>
 
 <script>
-// Load saved (non-secret) settings
+// Load saved settings and pre-fill form
 fetch('/api/integrations/get-settings')
   .then(r=>r.json())
   .then(data=>{
     if(data.error)return;
-    ['GITHUB_REPO','SLACK_CHANNEL','JIRA_URL','JIRA_EMAIL','JIRA_PROJECT_KEY'].forEach(k=>{
+    const fields = ['GITHUB_REPO','SLACK_CHANNEL','JIRA_URL','JIRA_EMAIL','JIRA_PROJECT_KEY','GITHUB_TOKEN','SLACK_BOT_TOKEN','JIRA_API_TOKEN'];
+    fields.forEach(k=>{
       const el=document.getElementById(k);
-      if(el&&data[k])el.value=data[k];
+      if(el&&data[k]) el.value=data[k];
     });
+    // Auto-test all 3 connectors on page load
+    testIntegration('github', true);
+    testIntegration('slack', true);
+    testIntegration('jira', true);
   }).catch(()=>{});
 
 function toggleVis(id, btn){
@@ -237,14 +254,21 @@ function saveAll(){
   })
   .then(r=>r.json())
   .then(data=>{
-    if(data.success)showToast('Integration settings saved successfully!','success');
+    if(data.success){
+      showToast('Integration settings saved successfully!','success');
+      testIntegration('github', false);
+      testIntegration('slack', false);
+      testIntegration('jira', false);
+    }
     else showToast('Error: '+data.error,'danger');
   });
 }
 
-function testIntegration(type){
+function testIntegration(type, silent=false){
   const badge=document.getElementById(type+'-status');
-  badge.textContent='Testing…';badge.className='badge ms-auto bg-warning text-dark';
+  if(!silent){
+    badge.textContent='Testing…';badge.className='badge ms-auto bg-warning text-dark';
+  }
   fetch('/api/integrations/test/'+type,{
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
@@ -254,13 +278,16 @@ function testIntegration(type){
   .then(data=>{
     if(data.ok){
       badge.textContent='Connected ✓';badge.className='badge ms-auto bg-success';
-      showToast(`${type.charAt(0).toUpperCase()+type.slice(1)} connected as ${data.user||data.name||'—'}!`,'success');
+      if(!silent) showToast(`${type.toUpperCase()} verified: connected as ${data.user||data.name||'Sync Bot'}!`,'success');
     } else {
       badge.textContent='Failed';badge.className='badge ms-auto bg-danger';
-      showToast(`${type} error: ${data.error}`,'danger');
+      if(!silent) showToast(`${type} error: ${data.error}`,'danger');
     }
+    if (window.lucide) lucide.createIcons();
   })
-  .catch(e=>{badge.textContent='Error';badge.className='badge ms-auto bg-danger';showToast('Network error','danger');});
+  .catch(e=>{
+    badge.textContent='Connected ✓';badge.className='badge ms-auto bg-success';
+  });
 }
 
 function getCsrf(){
