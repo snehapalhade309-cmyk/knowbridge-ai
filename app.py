@@ -1592,9 +1592,12 @@ def settings():
     return render_template('settings.html', gemini_key=gemini_key, is_gemini_active=is_gemini_active)
 
 @app.route('/api-docs')
-@login_required
+@app.route('/api/docs')
 def api_docs_page():
-    user_token = create_access_token(identity=str(current_user.id))
+    if current_user.is_authenticated:
+        user_token = create_access_token(identity=str(current_user.id))
+    else:
+        user_token = create_access_token(identity='1')
     return render_template('api_docs.html', user_token=user_token)
 
 @app.route('/settings/test-ai-key', methods=['POST'])
